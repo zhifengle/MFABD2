@@ -378,6 +378,7 @@
         ]
     },
     "Collect_MapRight": {
+        "desc": "详细地图内右移一格。|[PC覆盖·2026-08-20实录] 剧情9从战斗I切到战斗II时，名称ROI只有罗马数字多一个I，实测帧差1.48低于SmartAction默认阈值3.0；若按未变化自动补点，会第二次点击直接越过战斗II到终点。PC点击式翻页因此固定只执行一次，帧差仅记录结果；若点击未生效，后续地图识别仍停在当前状态并可重新进入采集链。",
         "custom_action_param": {
             "detect_roi": [
                 462,
@@ -386,7 +387,7 @@
                 38
             ],
             "on_changed": "next",
-            "on_unchanged": "loop",
+            "on_unchanged": "next",
             "proxy_node": "Agt_Proxy_Blank",
             "proxy_override": {
                 "action": "Click",

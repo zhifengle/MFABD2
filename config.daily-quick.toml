@@ -1,0 +1,90 @@
+# Unity Bridge 批量任务配置 - 日常-尽快完成
+# 基于 interface.json 的 "日常-尽快完成" preset
+# 使用方法: .\.venv\Scripts\python.exe agent\run_batch_tasks.py --config config.daily-quick.toml
+
+[bridge]
+# unity-automation-bridge 插件目录路径
+# 留空则自动从游戏窗口发现
+dir = ""
+
+# 全局配置
+[global]
+account_id = "0"
+default_timeout = 1200.0
+# 任务失败时是否继续执行后续任务
+continue_on_error = true
+
+# 批量任务列表（按顺序执行）
+[[tasks]]
+name = "[全局]启动脚本(置顶)PC"
+enabled = false
+options = [
+    {name = "前置助手", value = "按需"}
+]
+
+[[tasks]]
+name = "[执行]快速狩猎扫荡"
+enabled = true
+
+[[tasks]]
+name = "[执行]装备制作&炼制日常"
+enabled = true
+options = [
+    {name = "精炼按自定义标志排序", value = "Yes"},
+    {name = "仅精炼<17 或 <10", value = "低于17阶"}
+]
+
+[[tasks]]
+name = "[执行]白嫖抽卡"
+enabled = true
+
+[[tasks]]
+name = "[执行]地图采集[单章]"
+enabled = false
+
+[[tasks]]
+name = "[执行]竞技场"
+enabled = true
+
+[[tasks]]
+name = "[执行]赛季活动快速战斗"
+enabled = true
+
+[[tasks]]
+name = "[执行]周常任务"
+enabled = true
+
+[[tasks]]
+name = "[领取]日常任务"
+enabled = true
+
+[[tasks]]
+name = "[领取]任务页(每日/每周)"
+enabled = true
+
+[[tasks]]
+name = "[领取]活动页奖励"
+enabled = true
+
+[[tasks]]
+name = "[领取]通行证奖励"
+enabled = true
+
+[[tasks]]
+name = "[领取]领取邮件"
+enabled = true
+
+[[tasks]]
+name = "[执行]商店套利"
+enabled = false
+
+[[tasks]]
+name = "[执行]地图采集[完整]"
+enabled = true
+options = [
+    {name = "简单类跳过", value = "Yes"}
+]
+
+[[tasks]]
+name = "[全局]结束游戏"
+enabled = false

@@ -1,0 +1,19 @@
+# Unity Bridge 单任务配置示例
+# 相对路径以本配置文件所在目录为基准。
+
+[bridge]
+# 留空时从游戏窗口自动发现。
+dir = ""
+
+[task]
+name = "[执行]地图采集[完整]"
+account_id = "0"
+timeout = 1200
+
+[[task.options]]
+name = "采集卡带屏蔽"
+value = "Yes"
+
+[[task.options]]
+name = "故事卡带屏蔽"
+value = "3"
