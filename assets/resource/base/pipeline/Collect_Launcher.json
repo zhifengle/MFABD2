@@ -163,8 +163,15 @@
         "focus": "CM.L.调度器"
     },
     "Collect_FeatureSwitch_StoryPack": {
+        "desc": "剧情卡分类入口；启用简单类跳过时先检查整类周标记，已完成则不进入剧情卡1",
         "enabled": true,
         "max_hit": 1,
+        "recognition": "Custom",
+        "custom_recognition": "CheckCoolDown",
+        "custom_recognition_param": {
+            "card_name": "Pack_Story_SimpleDone",
+            "cycle_type": "g_weekly"
+        },
         "anchor": {
             "SetSimpleSkip": "Collect_StoryPack_SetSimpleSkip",
             "SmartSwipOut": ""
@@ -175,8 +182,15 @@
         ]
     },
     "Collect_FeatureSwitch_CharacterPack": {
+        "desc": "角色卡分类入口；启用简单类跳过时先检查整类周标记，已完成则不进入角色卡1",
         "enabled": true,
         "max_hit": 1,
+        "recognition": "Custom",
+        "custom_recognition": "CheckCoolDown",
+        "custom_recognition_param": {
+            "card_name": "Pack_Character_SimpleDone",
+            "cycle_type": "g_weekly"
+        },
         "anchor": {
             "SmartSwipOut": ""
         },
@@ -187,8 +201,15 @@
         ]
     },
     "Collect_FeatureSwitch_EvenPack": {
+        "desc": "活动卡分类入口；启用简单类跳过时先检查整类周标记，已完成则不进入活动卡1",
         "enabled": true,
         "max_hit": 1,
+        "recognition": "Custom",
+        "custom_recognition": "CheckCoolDown",
+        "custom_recognition_param": {
+            "card_name": "Pack_Event_SimpleDone",
+            "cycle_type": "g_weekly"
+        },
         "anchor": {
             "SmartSwipOut": ""
         },
@@ -1447,6 +1468,7 @@
             "card_name": "Pack_Story_SimpleDone",
             "cycle_type": "g_weekly"
         },
+        "next": ["Collect_QuickCart_Menu"],
         "focus": "Py.经典剧情卡简单全完成标记"
     },
     "Collect_LocatePack_SimpleSkip_Character": {
@@ -1456,6 +1478,7 @@
             "card_name": "Pack_Character_SimpleDone",
             "cycle_type": "g_weekly"
         },
+        "next": ["Collect_QuickCart_Menu"],
         "focus": "Py.角色剧情卡简单全完成标记"
     },
     "Collect_LocatePack_SimpleSkip_Event": {
@@ -1465,6 +1488,7 @@
             "card_name": "Pack_Event_SimpleDone",
             "cycle_type": "g_weekly"
         },
+        "next": ["Collect_QuickCart_Menu"],
         "focus": "Py.活动卡简单全完成标记"
     },
     "Collect_LocatePack_SimpleSkip_Manager": {
@@ -1474,6 +1498,7 @@
             "card_name": "Pack_Manager_SimpleDone",
             "cycle_type": "g_weekly"
         },
+        "next": ["Collect_QuickCart_Menu"],
         "focus": "Py.店长剧情卡简单全完成标记"
     },
     "Collect_PackLocation_PassFieldsAndHub": {

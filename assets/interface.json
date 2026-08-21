@@ -721,7 +721,7 @@
         },
         "简单类跳过": {
             "type": "switch",
-            "description": "卡带右滑到底时，认为该大类本周已全部刷完并打标，下次运行跳过。<br>可<b>节省时间</b>，每周重置。",
+            "description": "卡带扫描到该大类末尾时写入本周完成标记；下次运行会在分类入口直接跳过，不再进入该类卡带1。<br>可<b>节省时间</b>，每周重置。",
             "cases": [
                 {
                     "name": "No",
@@ -733,6 +733,15 @@
                             "recognition": "DirectHit"
                         },
                         "Collect_EventPack_SetSimpleSkip": {
+                            "recognition": "DirectHit"
+                        },
+                        "Collect_FeatureSwitch_StoryPack": {
+                            "recognition": "DirectHit"
+                        },
+                        "Collect_FeatureSwitch_CharacterPack": {
+                            "recognition": "DirectHit"
+                        },
+                        "Collect_FeatureSwitch_EvenPack": {
                             "recognition": "DirectHit"
                         }
                     }

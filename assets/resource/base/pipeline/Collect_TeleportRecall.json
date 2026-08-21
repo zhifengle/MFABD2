@@ -493,10 +493,45 @@
             "[JumpBack]Global_WaitingForLoading"
         ],
         "on_error": [
+            "Collect_IM_OnFoot_NviMap_E01_A2_Move_Sub_Retry",
             "Collect_IM_OnFoot_NviMap_Sub_Err",
             "Global_Null"
         ],
         "focus": "小地图图标子菜单"
+    },
+    "Collect_IM_OnFoot_NviMap_E01_A2_Move_Sub_Retry": {
+        "desc": "夏日骑士战斗区入口补点：仅当子菜单仍存在时重试一次，失败后再回箱庭",
+        "max_hit": 1,
+        "recognition": "OCR",
+        "roi": [
+            121,
+            94,
+            510,
+            496
+        ],
+        "expected": [
+            "战斗区"
+        ],
+        "action": "Click",
+        "target_offset": [
+            10,
+            0,
+            0,
+            0
+        ],
+        "post_delay": 2000,
+        "timeout": 8000,
+        "next": [
+            "[JumpBack]Collect_IM_OnFoot_Moveing",
+            "Collect_IM_OnFoot_NviMap_2_Move_End",
+            "[JumpBack]Collect_IM_Move_MGS",
+            "[JumpBack]Global_WaitingForLoading"
+        ],
+        "on_error": [
+            "Collect_IM_OnFoot_NviMap_Sub_Err",
+            "Global_Null"
+        ],
+        "focus": "夏日骑士战斗区入口局部补点"
     },
     "Collect_IM_OnFoot_NviMap_Sub_Err": {
         "desc": "ui子菜单无法点击回退后,从此重开",

@@ -214,6 +214,7 @@
             "Collect_TargetMap2",
             "Collect_TargetMap3",
             "Collect_TargetMap4",
+            "Collect_Character3_Battle3_End",
             "[JumpBack]Collect_ClickTelepor_ButNotActive",
             "[JumpBack]Collect_TargetMap_Special_ClickTpCircleIco",
             "[JumpBack]Collect_ClickTeleporCircleIco",
@@ -308,6 +309,7 @@
             "[JumpBack]Collect_TargetMap_Special_ClickTpCircleIco",
             "Collect_QuickCart_TargetMapEnd",
             "Collect_Architecture_Underlying_Logic_Protection",
+            "Collect_Character3_Battle3_End",
             "[JumpBack]Collect_ClickTelepor_ButNotActive",
             "[JumpBack]Collect_ClickTeleporCircleIco",
             "[JumpBack]Collect_Protection_ReturnToAreaMap",
@@ -374,6 +376,7 @@
             "[JumpBack]Collect_TargetMap_Special_ClickTpCircleIco",
             "Collect_QuickCart_TargetMapEnd",
             "Collect_Architecture_Underlying_Logic_Protection",
+            "Collect_Character3_Battle3_End",
             "[JumpBack]Collect_ClickTelepor_ButNotActive",
             "[JumpBack]Collect_ClickTeleporCircleIco",
             "[JumpBack]Collect_Protection_ReturnToAreaMap",
@@ -408,6 +411,7 @@
             "Collect_QuickCart_TargetMapEnd",
             "Collect_QuickCart_FastUI",
             "Collect_Architecture_Underlying_Logic_Protection",
+            "Collect_Character3_Battle3_End",
             "[JumpBack]Collect_ClickTelepor_ButNotActive",
             "[JumpBack]Collect_ClickTeleporCircleIco",
             "[JumpBack]Collect_Protection_ReturnToAreaMap",
@@ -949,6 +953,20 @@
         "desc": "预留节点,禁止删除,远端传入action打完成卡带标记。",
         "focus": "CM.卡带内流程结束-执行完成打标记"
     },
+    "Collect_Character3_Battle3_End": {
+        "desc": "角色3《美丽无望》专属终点：区域图标题同时包含战斗III与拍卖仓库，且不存在右翻页按钮。三条件共同成立才结束，避免把其他卡带的战斗III误判为终点。",
+        "recognition": "And",
+        "all_of": [
+            "Cpt_Collect_Character3_Battle3_End_Ocr",
+            "Cpt_Collect_Character3_Battle3_NoRight"
+        ],
+        "next": [
+            "Collect_QuickCart_FastUI",
+            "[JumpBack]Global_QuickCart_MenuReset",
+            "[JumpBack]Global_ToSandBox"
+        ],
+        "focus": "CCB.角色3战斗III拍卖仓库无右页-卡带结束"
+    },
     "Collect_QuickCart_TargetMapEnd": {
         "desc": "维护点C02开端",
         "recognition": "Or",
@@ -1044,5 +1062,22 @@
             "安全"
         ],
         "focus": "CM.N.卡带内流程进入END环节"
+    },
+    "Cpt_Collect_Character3_Battle3_End_Ocr": {
+        "desc": "[判定]角色3终点地图名；同时约束战斗III与拍卖仓库，不单独按战斗序号放行。",
+        "recognition": "OCR",
+        "roi": [
+            408,
+            622,
+            466,
+            47
+        ],
+        "expected": "^(?=.*战[斗鬥]\\s*(III|Ⅲ|3))(?=.*拍[卖賣]仓[库庫]).*$"
+    },
+    "Cpt_Collect_Character3_Battle3_NoRight": {
+        "desc": "[判定]角色3终点不存在右翻页按钮。独立节点保留inverse语义，供And组合引用。",
+        "recognition": "Or",
+        "any_of": ["Rec_AreaMap_ButtRight_Tmp"],
+        "inverse": true
     }
 }
