@@ -377,6 +377,15 @@
             1
         ]
     },
+    "Collect_OperationsEnd_NORight": {
+        "desc": "防止识别不到右键/且能误识别FindTeleporCircle的离谱情况。|[PC覆盖·2026-08-21实录] 角色7合约之战仅有战斗I，采集后没有右翻页，本应由本节点退出；但base roi[267,298,743,84]小于PC模板MapOlayLeftButt.png的814px宽度，TemplateMatcher每轮报templ size is too large，随后回退FindTeleporCircle，导致战斗I的两个传送阵无限往返。ROI改为覆盖PC左右翻页区[223,313,835,73]，确保模板可匹配并恢复无右页退出。",
+        "roi": [
+            223,
+            313,
+            835,
+            73
+        ]
+    },
     "Collect_MapRight": {
         "desc": "详细地图内右移一格。|[PC覆盖·2026-08-20实录] 剧情9从战斗I切到战斗II时，名称ROI只有罗马数字多一个I，实测帧差1.48低于SmartAction默认阈值3.0；若按未变化自动补点，会第二次点击直接越过战斗II到终点。PC点击式翻页因此固定只执行一次，帧差仅记录结果；若点击未生效，后续地图识别仍停在当前状态并可重新进入采集链。",
         "custom_action_param": {
@@ -399,7 +408,7 @@
                     3
                 ]
             },
-            "loop_limit": 4
+            "unchanged_streak": 1
         }
     },
     "Collect_FindTeleporCircle0.9": {
@@ -462,6 +471,14 @@
             "旅馆$",
             "旅館$",
             "安全"
+        ]
+    },
+    "Cpt_Collect_Character3_Battle3_End_Ocr": {
+        "roi": [
+            452,
+            638,
+            378,
+            40
         ]
     },
     "Collect_Telepor_Retry_PC": {

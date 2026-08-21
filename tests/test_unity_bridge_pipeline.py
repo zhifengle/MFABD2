@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+import struct
 import sys
 import unittest
 from pathlib import Path
@@ -17,6 +19,7 @@ for path in (PROJECT_ROOT, AGENT_ROOT):
 from maa.resource import Resource
 
 from agent.utils.unity_bridge import vk_to_unity_key
+from utils.interface_options import build_pipeline_override
 from utils.standalone_runtime import register_standalone_extensions
 
 
@@ -101,6 +104,147 @@ class UnityBridgePipelineTests(unittest.TestCase):
 
         self.assertFalse(self.node("Collect_Pack_Character_8")["enabled"])
 
+    def test_no_right_page_template_fits_pc_roi(self) -> None:
+        node = self.node("Collect_OperationsEnd_NORight")
+        roi = node["recognition"]["param"]["roi"]
+        template = (
+            PROJECT_ROOT
+            / "assets"
+            / "resource"
+            / "pc"
+            / "image"
+            / "MapOlayLeftButt.png"
+        )
+        png = template.read_bytes()
+        width, height = struct.unpack(">II", png[16:24])
+
+        self.assertGreaterEqual(roi[2], width)
+        self.assertGreaterEqual(roi[3], height)
+
+    def test_pc_map_right_is_a_single_click_without_looping(self) -> None:
+        node = self.node("Collect_MapRight")
+        params = self.action(node)["param"]["custom_action_param"]
+
+        self.assertEqual(params["on_changed"], "next")
+        self.assertEqual(params["on_unchanged"], "next")
+        self.assertEqual(params["unchanged_streak"], 1)
+        self.assertNotIn("loop_limit", params)
+
+    def test_character_three_terminal_requires_unique_map_and_no_right_page(self) -> None:
+        terminal = self.node("Collect_Character3_Battle3_End")
+        all_of = terminal["recognition"]["param"]["all_of"]
+        self.assertEqual(
+            all_of,
+            [
+                "Cpt_Collect_Character3_Battle3_End_Ocr",
+                "Cpt_Collect_Character3_Battle3_NoRight",
+            ],
+        )
+
+        no_right = self.node("Cpt_Collect_Character3_Battle3_NoRight")
+        self.assertTrue(no_right["inverse"])
+
+        name_check = self.node("Cpt_Collect_Character3_Battle3_End_Ocr")
+        expected = name_check["recognition"]["param"]["expected"]
+        self.assertIn("战[斗鬥]", expected[0])
+        self.assertIn("拍[卖賣]仓[库庫]", expected[0])
+
+        for node_name in (
+            "Collect_TargetMap1-2",
+            "Collect_TargetMap2",
+            "Collect_TargetMap3",
+            "Collect_TargetMap4",
+        ):
+            with self.subTest(node=node_name):
+                next_names = self.next_names(self.node(node_name))
+                terminal_index = next_names.index("Collect_Character3_Battle3_End")
+                no_active_index = next_names.index("Collect_ClickTelepor_ButNotActive")
+                self.assertLess(terminal_index, no_active_index)
+
+    def test_event_one_battle_menu_accepts_simplified_pc_text(self) -> None:
+        node = self.node("Collect_IM_OnFoot_NviMap_E01_A2_Move_Sub")
+        expected = node["recognition"]["param"]["expected"]
+        self.assertIn("战斗区", expected)
+        self.assertIn("戰鬥區域", expected)
+
+    def test_event_one_battle_menu_retries_locally_once_before_full_reset(self) -> None:
+        entry = self.node("Collect_IM_OnFoot_NviMap_E01_A2_Move_Sub")
+        retry_name = "Collect_IM_OnFoot_NviMap_E01_A2_Move_Sub_Retry"
+        self.assertEqual(
+            self.next_names({"next": entry["on_error"]}),
+            [retry_name, "Collect_IM_OnFoot_NviMap_Sub_Err", "Global_Null"],
+        )
+
+        retry = self.node(retry_name)
+        self.assertEqual(retry["max_hit"], 1)
+        self.assertEqual(retry["action"]["type"], "Click")
+        self.assertIn("战斗区", retry["recognition"]["param"]["expected"])
+        self.assertEqual(
+            self.next_names({"next": retry["on_error"]}),
+            ["Collect_IM_OnFoot_NviMap_Sub_Err", "Global_Null"],
+        )
+
+    def test_simple_skip_checks_category_before_entering_first_card(self) -> None:
+        for node_name, marker in (
+            ("Collect_FeatureSwitch_StoryPack", "Pack_Story_SimpleDone"),
+            ("Collect_FeatureSwitch_CharacterPack", "Pack_Character_SimpleDone"),
+            ("Collect_FeatureSwitch_EvenPack", "Pack_Event_SimpleDone"),
+        ):
+            with self.subTest(node=node_name):
+                node = self.node(node_name)
+                recognition = node["recognition"]
+                self.assertEqual(recognition["type"], "Custom")
+                self.assertEqual(
+                    recognition["param"]["custom_recognition"],
+                    "CheckCoolDown",
+                )
+                self.assertEqual(
+                    recognition["param"]["custom_recognition_param"]["card_name"],
+                    marker,
+                )
+
+        interface = json.loads(
+            (PROJECT_ROOT / "assets" / "interface.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        simple_skip = interface["option"]["简单类跳过"]
+        disabled_override = next(
+            case for case in simple_skip["cases"] if case["name"] == "No"
+        )["pipeline_override"]
+        for node_name in (
+            "Collect_FeatureSwitch_StoryPack",
+            "Collect_FeatureSwitch_CharacterPack",
+            "Collect_FeatureSwitch_EvenPack",
+        ):
+            self.assertEqual(disabled_override[node_name]["recognition"], "DirectHit")
+
+        task = next(
+            task
+            for task in interface["task"]
+            if task["name"] == "[执行]地图采集[完整]"
+        )
+        default_override = build_pipeline_override(task, interface["option"], {})
+        enabled_override = build_pipeline_override(
+            task,
+            interface["option"],
+            {"简单类跳过": "Yes"},
+        )
+        for node_name in (
+            "Collect_FeatureSwitch_StoryPack",
+            "Collect_FeatureSwitch_CharacterPack",
+            "Collect_FeatureSwitch_EvenPack",
+        ):
+            self.assertEqual(default_override[node_name]["recognition"], "DirectHit")
+            self.assertNotIn(node_name, enabled_override)
+
+    def test_category_completion_returns_to_dispatcher(self) -> None:
+        for marker in (
+            "Collect_LocatePack_SimpleSkip_Story",
+            "Collect_LocatePack_SimpleSkip_Character",
+            "Collect_LocatePack_SimpleSkip_Event",
+        ):
+            self.assertEqual(self.next_names(self.node(marker)), ["Collect_QuickCart_Menu"])
 
 if __name__ == "__main__":
     unittest.main()
