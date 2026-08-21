@@ -73,3 +73,10 @@ Bridge 专用行为只放在 `assets/resource/bridge`。普通 PC GUI 只使用 
 - 不记录会快速过期的工作区文件清单、测试通过数量或某次提交前状态。
 - 故障复盘保留可复用的“现象、根因、当前实现、回归点”，不保留调查流水账。
 - 代码、选项或 node 语义变化时，同一提交更新对应文档和回归测试。
+
+## 提交边界
+
+- 通用修复按可独立向上游提交 PR 的标准整理：不得依赖 PC/Unity Bridge 资源、runner 或自用配置；相关测试和文档也必须能在上游独立使用。
+- `assets/interface.json`、`assets/resource/base` 的跨平台行为通常属于通用修复；`assets/resource/pc`、`assets/resource/bridge` 和 Bridge runner 通常属于自用修改，不混入上游提交。
+- 同一故障涉及两层时，先提交可独立工作的通用修复，再提交 PC/Bridge 适配；后者可以依赖前者，反向不行。
+- 提交前用 `git diff --cached --name-only` 检查边界；通用提交使用 `fix:`，自用适配使用 `fix(PC):` 等明确作用域。
