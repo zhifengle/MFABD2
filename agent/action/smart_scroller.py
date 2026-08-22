@@ -5,6 +5,7 @@ from maa.agent.agent_server import AgentServer
 from maa.custom_action import CustomAction
 from maa.context import Context
 import utils
+from .unity_bridge_swipe import bridge_swipe_override
 
 # ==============================================================================
 # 📜 智能滑动控制器 (SmartScroller - 代理节点模式)
@@ -110,6 +111,11 @@ class SmartSwipe(CustomAction):
                         "end_hold": end_hold
                     }
                 }
+                bridge_override = bridge_swipe_override(
+                    context, swipe_override[proxy_node]
+                )
+                if bridge_override is not None:
+                    swipe_override[proxy_node] = bridge_override
                 # run_task 返回 Optional[TaskDetail],成败在 .status 里。
                 # 旧写法把返回值整个丢弃:代理节点写错/被禁用时滑动压根没发生,而前后两帧
                 # 必然一致 → diff=0 → 被判成"画面静止"→"确认触底",配置错误就这样被

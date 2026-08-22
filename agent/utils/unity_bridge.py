@@ -110,6 +110,11 @@ class UnityBridgeClient:
         os.makedirs(self._response_dir, exist_ok=True)
 
     @property
+    def bridge_dir(self) -> str:
+        """返回当前客户端使用的 Bridge 插件目录。"""
+        return self._bridge_dir
+
+    @property
     def last_result(self) -> dict[str, str]:
         """返回最近一次请求的响应和客户端诊断元数据副本。"""
         return dict(self._last_result)

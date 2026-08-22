@@ -96,6 +96,42 @@ class UnityBridgeClientDiagnosticsTests(unittest.TestCase):
             self.assertIn("status='timeout'", description)
             self.assertIn("requestState='pending'", description)
 
+    def test_swipe_serializes_end_hold_for_plugin(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            bridge_dir = Path(directory)
+            client = UnityBridgeClient(str(bridge_dir))
+            captured: dict[str, str] = {}
+
+            request_dir = bridge_dir / "requests"
+            response_dir = bridge_dir / "responses"
+
+            def worker() -> None:
+                deadline = time.monotonic() + 2
+                while time.monotonic() < deadline:
+                    requests = list(request_dir.glob("*.request"))
+                    if requests:
+                        request_path = requests[0]
+                        for line in request_path.read_text(encoding="utf-8").splitlines():
+                            key, value = line.split("=", 1)
+                            captured[key] = value
+                        response_path = response_dir / f"{captured['id']}.response"
+                        response_path.write_text(
+                            f"protocol=2\nid={captured['id']}\nok=1\n",
+                            encoding="utf-8",
+                        )
+                        return
+                    time.sleep(0.005)
+
+            responder = threading.Thread(target=worker)
+            responder.start()
+            self.assertTrue(
+                client.swipe(974, 26, 161, 570, duration_ms=800, end_hold_ms=600)
+            )
+            responder.join(timeout=2)
+
+            self.assertEqual(captured["durationMs"], "800")
+            self.assertEqual(captured["endHoldMs"], "600")
+
 
 if __name__ == "__main__":
     unittest.main()

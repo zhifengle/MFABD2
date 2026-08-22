@@ -86,6 +86,14 @@ Bridge 的快捷键已经覆盖可采集卡带，不需要大幅横向滑动，�
 
 Raycast 命中对象不代表存在 click handler。`no-click-handler` 是有诊断价值的动作失败，不能在 Controller 层全局改成成功。已知的边界点击应由具体 pipeline 状态吸收，其他节点仍保留严格语义。
 
+### 需要 end_hold 的滑动使用 Bridge 专用动作
+
+MaaFramework Custom Controller 的 `swipe(x1, y1, x2, y2, duration)` 回调不包含 Pipeline Swipe 的 `end_hold`，直接走 Controller 会在到达终点后立刻抬起。插件协议本身支持 `endHoldMs`，因此 Bridge 最终资源中所有声明有效 `end_hold` 的原生 Swipe 都由 `UnityBridgeSwipe` CustomAction 接管，把 `begin`、`end`、`duration`、`end_hold` 和 `steps` 直接交给插件。
+
+静态 Swipe 由 `assets/resource/bridge/pipeline/Swipe.json` 和业务专属 Bridge 覆盖迁移；SmartSwipe/SmartAction 生成的动态代理在运行时检测 Controller 的 `protocol_end_hold` 能力，只在 Bridge 下把代理动作改写为 `UnityBridgeSwipe`。普通 PC Controller 返回无此能力，继续执行原生 Swipe，不改变 PC GUI 行为。
+
+快速狩猎的章节 7/9 因而可以保留 base 原始坐标。不要再次用缩短滑动距离补偿丢失的 `end_hold`；坐标补偿依赖当前惯性，不能等价替代按住终点。新增带 `end_hold` 的 Swipe 时，Pipeline 回归测试会要求同步增加 Bridge 迁移。
+
 ### 批处理只运行已登记任务
 
 单任务 runner 允许直接 entry，便于开发 node；批处理是长期自动化入口，拼错名称若被当作 entry 会把配置错误推迟到运行期。因此批处理在连接前要求任务存在于 `interface.json`，并预检全部启用和禁用项。
@@ -108,6 +116,7 @@ Raycast 命中对象不代表存在 click handler。`no-click-handler` 是有诊
 8. 把 `[执行]地图采集[单章]` 当成按编号选章：它只在首张符合条件的卡带完成后停止。
 9. 因已知的最左端重复点击而全局吞掉 `no-click-handler`：会隐藏其他真实点击目标错误。
 10. 重新启用剧情 20 或角色 8：两者没有地图采集内容。
+11. 缩短快速狩猎地图 Swipe 坐标以补偿惯性：只能校准单一现场，不能恢复 `end_hold` 语义。
 
 `.tmp/verify/s6_verify_bridge.py` 对应早期“全局禁滑、剧情仍点击”的方案，不能作为当前验收依据。
 

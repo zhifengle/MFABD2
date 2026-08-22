@@ -1,0 +1,26 @@
+{
+    "QuickHunt_CollectMap_SwipLeft": {
+        "desc": "[Unity Bridge] 使用专用动作把 MaaFW Custom Controller ABI 丢失的 end_hold 传给 Bridge；保持原始地图坐标。",
+        "action": "Custom",
+        "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {
+            "begin": [556, 32],
+            "end": [624, 580],
+            "duration": 800,
+            "end_hold": 600,
+            "steps": 15
+        }
+    },
+    "QuickHunt_CollectMap_SwipNoth": {
+        "desc": "[Unity Bridge] 使用专用动作把 MaaFW Custom Controller ABI 丢失的 end_hold 传给 Bridge；保持原始地图坐标。",
+        "action": "Custom",
+        "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {
+            "begin": [974, 26],
+            "end": [161, 570],
+            "duration": 800,
+            "end_hold": 600,
+            "steps": 15
+        }
+    }
+}

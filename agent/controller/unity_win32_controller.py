@@ -290,6 +290,15 @@ class UnityWin32Controller(CustomController):
         vision_uuid = self._vision.uuid if self._vision is not None else "unconnected"
         return f"unity-bridge-{vision_uuid}-{os.getpid()}"
 
+    def get_custom_info(self) -> dict[str, object]:
+        """向同进程 CustomAction 暴露 Bridge 专用能力。"""
+        return {
+            "unity_bridge": {
+                "directory": self._bridge.bridge_dir,
+                "protocol_end_hold": True,
+            }
+        }
+
     def start_app(self, intent: str) -> bool:
         """查找游戏窗口，找到返回 True（不负责启动游戏进程）。"""
         self._hwnd = find_game_hwnd(self._window_class, self._window_title)

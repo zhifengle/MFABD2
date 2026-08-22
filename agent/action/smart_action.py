@@ -10,6 +10,7 @@ from maa.custom_action import CustomAction
 from maa.context import Context
 
 import utils
+from .unity_bridge_swipe import bridge_swipe_override
 
 __version__ = "1.1.0"
 
@@ -312,7 +313,13 @@ class SmartAction(CustomAction):
         链内部怎么失败的不做区分，因为动作可能已部分生效，让帧差分说话。
         """
         node = cfg["proxy_node"]
-        detail = context.run_task(node, cfg["proxy_override"])
+        proxy_override = cfg["proxy_override"]
+        if proxy_override:
+            payload = proxy_override[node]
+            bridge_override = bridge_swipe_override(context, payload)
+            if bridge_override is not None:
+                proxy_override = {node: bridge_override}
+        detail = context.run_task(node, proxy_override)
         # 旧版把返回值整个丢弃 → 代理节点写错/被禁用时动作压根没发生，而前后两帧必然
         # 一致 → diff=0 → 被判成"画面没变" → 配置错误就这样被静默翻译成了业务结论。
         if detail is None:

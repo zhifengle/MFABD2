@@ -1,0 +1,160 @@
+{
+    "Activities_Slip": {
+        "custom_action_param": {
+            "proxy_node": "Agt_Proxy_Blank",
+            "proxy_override": {
+                "action": "Swipe",
+                "begin": [260, 400],
+                "end": [260, 133],
+                "duration": 1000,
+                "end_hold": 1000,
+                "post_delay": 1000
+            },
+            "detect_roi": [218, 188, 129, 53],
+            "threshold": 2.0,
+            "settle_delay": 1000,
+            "on_changed": "next",
+            "on_unchanged": "error",
+            "unchanged_streak": 2
+        }
+    },
+    "Activities_Slip_D2": {
+        "action": "Custom", "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {"begin": [260, 400], "end": [260, 133], "duration": 1000, "end_hold": 1000}
+    },
+    "Activities_Slip_D3": {
+        "action": "Custom", "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {"begin": [260, 400], "end": [260, 133], "duration": 1000, "end_hold": 1000}
+    },
+    "Activities_Slip_U1": {
+        "action": "Custom", "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {"begin": [260, 200], "end": [260, 467], "duration": 1000, "end_hold": 1000}
+    },
+    "Activities_Slip_U2": {
+        "action": "Custom", "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {"begin": [260, 200], "end": [260, 467], "duration": 1000, "end_hold": 1000}
+    },
+    "Activities_Slip_U3": {
+        "action": "Custom", "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {"begin": [260, 200], "end": [260, 467], "duration": 1000, "end_hold": 1000}
+    },
+    "Arbitrage_Cooking_Swip_Page2": {
+        "action": "Custom", "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {"begin": [820, 550], "end": [820, 90], "duration": 200, "end_hold": 500}
+    },
+    "Arbitrage_Select_Swip": {
+        "custom_action_param": {
+            "proxy_node": "Agt_Proxy_Blank",
+            "proxy_override": {
+                "action": "Swipe",
+                "begin": [200, 660],
+                "end": [200, 135],
+                "duration": 600,
+                "end_hold": 1000,
+                "post_delay": 1000
+            },
+            "detect_roi": [150, 104, 60, 120],
+            "threshold": 3.0,
+            "settle_delay": 500,
+            "on_changed": "next",
+            "on_unchanged": "error",
+            "unchanged_streak": 3
+        }
+    },
+    "Arbitrage_PackList_ResetSwip": {
+        "action": "Custom", "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {"begin": [200, 135], "end": [200, 660], "duration": 300, "end_hold": 500}
+    },
+    "Arbitrage_Swip_Calibration_Down": {
+        "action": "Custom", "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {"begin": [635, 248], "end": [635, 266], "duration": 200, "end_hold": 250}
+    },
+    "Arbitrage_Swip_Calibration_Up": {
+        "action": "Custom", "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {"begin": [635, 254], "end": [635, 248], "duration": 200, "end_hold": 250}
+    },
+    "Arbitrage_Swip_Calibration_Up_FineTuning": {
+        "action": "Custom", "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {"begin": [635, 252], "end": [635, 249], "duration": 200, "end_hold": 250}
+    },
+    "Arbitrage_Swip_PriceList": {
+        "action": "Custom", "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {"begin": [653, 511], "end": [653, 150], "duration": 700, "end_hold": 500}
+    },
+    "Collect_LocatePackFrame_Loc1_ResetLoc": {
+        "action": "Custom", "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {"begin": [49, 659], "end": [64, 659], "duration": 200, "end_hold": 500}
+    },
+    "Daily_Busin_DecorCoin_Move_1": {
+        "action": "Custom", "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {"begin": [1270, 89], "end": [0, 614], "duration": 1000, "end_hold": 500}
+    },
+    "Daily_Busin_DecorCoin_Move_2": {
+        "action": "Custom", "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {"begin": [426, 97], "end": [979, 705], "duration": 1000, "end_hold": 500}
+    },
+    "Daily_Busin_DecorCoin_Move_3": {
+        "action": "Custom", "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {"begin": [1262, 709], "end": [0, 94], "duration": 1000, "end_hold": 500}
+    },
+    "GachaADV_Slip_Action": {
+        "action": "Custom", "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {"begin": [174, 435], "end": [174, 142], "duration": 600, "end_hold": 1000}
+    },
+    "Gacha_Slip": {
+        "action": "Custom", "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {"begin": [210, 450], "end": [210, 220], "duration": 500, "end_hold": 500}
+    },
+    "Global_BackToPve_PVEBookSwipe": {
+        "action": "Custom", "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {"begin": [150, 300], "end": [150, 700], "duration": 500, "end_hold": 800}
+    },
+    "Global_BackToPve_PVEBookSwipe_Lift": {
+        "action": "Custom", "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {"begin": [150, 370], "end": [1264, 370], "duration": 500, "end_hold": 800}
+    },
+    "Global_QuickCart_SwipTo_2P": {
+        "action": "Custom", "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {"begin": [905, 554], "end": [50, 554], "duration": 600, "end_hold": 500}
+    },
+    "Pass_TrySwip": {
+        "action": "Custom", "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {"begin": [280, 440], "end": [280, 200], "duration": 500, "end_hold": 500}
+    },
+    "Redemption_Evil_Redemption_ListSwip": {
+        "action": "Custom", "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {"begin": [240, 190], "end": [240, 600], "duration": 600, "end_hold": 500}
+    },
+    "Setup_SetSkill_1to2_Swip": {
+        "action": "Custom", "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {"begin": [1134, 592], "end": [103, 590], "duration": 500, "end_hold": 800}
+    },
+    "Setup_SetSkill_2to3_Swip": {
+        "action": "Custom", "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {"begin": [1134, 592], "end": [103, 590], "duration": 500, "end_hold": 800}
+    },
+    "Setup_SetSkill_3-1_Swip": {
+        "action": "Custom", "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {"begin": [1134, 592], "end": [103, 590], "duration": 500, "end_hold": 800}
+    },
+    "Setup_SetSkill_3to4_Swip": {
+        "action": "Custom", "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {"begin": [1134, 592], "end": [103, 590], "duration": 500, "end_hold": 800}
+    },
+    "Setup_SetSkill_4to5_Swip": {
+        "action": "Custom", "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {"begin": [1134, 592], "end": [103, 590], "duration": 500, "end_hold": 800}
+    },
+    "Setup_SetSkill_ReLift": {
+        "action": "Custom", "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {"begin": [115, 590], "end": [1134, 592], "duration": 500, "end_hold": 500}
+    },
+    "Setup_SetSkill_ReLift_Maxhit": {
+        "action": "Custom", "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {"begin": [115, 590], "end": [1134, 592], "duration": 500, "end_hold": 500}
+    },
+    "Setup_SetSkill_SwipMini": {
+        "action": "Custom", "custom_action": "UnityBridgeSwipe",
+        "custom_action_param": {"begin": [222, 505], "end": [118, 510], "duration": 500, "end_hold": 800}
+    }
+}
