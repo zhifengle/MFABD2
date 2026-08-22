@@ -194,6 +194,182 @@ class UnityBridgePipelineTests(unittest.TestCase):
             ["Collect_IM_OnFoot_NviMap_Sub_Err", "Global_Null"],
         )
 
+    def test_story_fourteen_uses_three_stage_pc_walking_route(self) -> None:
+        story_entry = self.node("Collect_Pack_KeyClick_Story_14")
+        self.assertEqual(
+            self.next_names(story_entry),
+            [
+                "Global_WaitingForLoading",
+                "Collect_Story14_Init",
+                "Collect_Pack_KeyClick_Story_14",
+            ],
+        )
+
+        init = self.node("Collect_Story14_Init")
+        closure_patch = self.action(init)["param"]["custom_action_param"]
+        self.assertEqual(closure_patch["target"], "Collect_IM_Closure")
+        self.assertEqual(
+            closure_patch["patch"]["custom_action_param"]["card_name"],
+            "Story_14_神圣审判",
+        )
+        self.assertEqual(
+            init["anchor"]["ExplorationBoard_Arrived"],
+            "Collect_Story14_Board_Arrived",
+        )
+        self.assertEqual(
+            self.next_names(init),
+            ["Collect_ReturnToExplorationBoard"],
+        )
+
+        for arrived_name, next_anchor in (
+            ("Collect_Story14_Board_Arrived", "Collect_Story14_OpenNviMap_Left"),
+            ("Collect_Story14_Left_Arrived", "Collect_Story14_ReturnBoard_AfterLeft"),
+            ("Collect_Story14_Central_Arrived", "Collect_IM_Closure"),
+        ):
+            with self.subTest(arrived=arrived_name):
+                arrived = self.node(arrived_name)
+                self.assertEqual(arrived["anchor"]["OnFoot_Skill"], next_anchor)
+                self.assertEqual(self.next_names(arrived), ["Collect_Skill_Start"])
+
+        return_after_left = self.node("Collect_Story14_ReturnBoard_AfterLeft")
+        self.assertEqual(
+            return_after_left["anchor"]["ExplorationBoard_Arrived"],
+            "Collect_Story14_OpenNviMap_Central",
+        )
+        self.assertEqual(
+            self.next_names(return_after_left),
+            ["Collect_ReturnToExplorationBoard"],
+        )
+
+        for node_name, target in (
+            ("Collect_Story14_Left_Move", [334, 213, 10, 10]),
+            ("Collect_Story14_Central_Move", [485, 233, 10, 10]),
+        ):
+            with self.subTest(node=node_name):
+                move = self.node(node_name)
+                self.assertEqual(self.action(move)["param"]["target"], target)
+                side = "Left" if "Left" in node_name else "Central"
+                self.assertEqual(
+                    self.next_names(move),
+                    [
+                        "Collect_IM_Move_MGS",
+                        "Collect_IM_OnFoot_Moveing",
+                        "Global_WaitingForLoading",
+                        f"Collect_Story14_{side}_Arrived",
+                    ],
+                )
+                self.assertEqual(
+                    self.next_names({"next": move["on_error"]}),
+                    [node_name, "Global_Null_Exception"],
+                )
+                self.assertEqual(move["max_hit"], 2)
+
+        for side in ("Left", "Central"):
+            with self.subTest(open_map=side):
+                opener = self.node(f"Collect_Story14_OpenNviMap_{side}")
+                self.assertEqual(
+                    self.action(opener)["param"]["target"],
+                    [132, 103, 10, 10],
+                )
+                self.assertGreaterEqual(opener["pre_delay"], 1500)
+                self.assertEqual(
+                    self.next_names(opener),
+                    [f"Collect_Story14_{side}_Move"],
+                )
+                self.assertEqual(
+                    self.next_names({"next": opener["on_error"]}),
+                    [f"Collect_Story14_OpenNviMap_{side}", "Global_Null_Exception"],
+                )
+                self.assertEqual(opener["max_hit"], 3)
+
+        story_source = json.loads(
+            (
+                PROJECT_ROOT
+                / "assets"
+                / "resource"
+                / "pc"
+                / "pipeline"
+                / "Collect_Story14.json"
+            ).read_text(encoding="utf-8")
+        )
+        self.assertNotIn("Collect_TargetMap", json.dumps(story_source))
+        self.assertNotIn("Collect_ForceTeleporCircle", json.dumps(story_source))
+        self.assertNotIn("Collect_OperationsMain_Sandplay", json.dumps(story_source))
+
+        for common_file in ("Collect_Navigation.json", "Collect_TeleportRecall.json"):
+            source = json.loads(
+                (
+                    PROJECT_ROOT
+                    / "assets"
+                    / "resource"
+                    / "pc"
+                    / "pipeline"
+                    / common_file
+                ).read_text(encoding="utf-8")
+            )
+            self.assertFalse(
+                any(
+                    name.startswith("Collect_Story14_")
+                    or "Collect_Story14_" in json.dumps(node, ensure_ascii=False)
+                    for name, node in source.items()
+                ),
+                f"公共文件不应定义或引用剧情14节点: {common_file}",
+            )
+
+    def test_pc_return_to_exploration_board_uses_dynamic_ocr_target(self) -> None:
+        entry = self.node("Collect_ReturnToExplorationBoard")
+        self.assertEqual(
+            self.next_names(entry),
+            [
+                "Collect_ReturnToExplorationBoard_Select",
+                "Collect_ReturnToExplorationBoard_Open",
+            ],
+        )
+
+        opener = self.node("Collect_ReturnToExplorationBoard_Open")
+        opener_recognition = opener["recognition"]
+        self.assertEqual(opener_recognition["type"], "TemplateMatch")
+        self.assertEqual(
+            opener_recognition["param"]["template"],
+            ["Nvi_SandGuideButt_PC.png"],
+        )
+        self.assertEqual(
+            opener_recognition["param"]["roi"],
+            [165, 50, 190, 60],
+        )
+        self.assertEqual(self.action(opener)["type"], "Click")
+        self.assertIs(self.action(opener)["param"]["target"], True)
+        self.assertEqual(
+            self.next_names(opener),
+            ["Collect_ReturnToExplorationBoard_Select"],
+        )
+
+        selector = self.node("Collect_ReturnToExplorationBoard_Select")
+        recognition = selector["recognition"]
+        self.assertEqual(recognition["type"], "OCR")
+        self.assertIn("探索告示板", recognition["param"]["expected"])
+        self.assertGreaterEqual(recognition["param"]["roi"][3], 600)
+        self.assertLessEqual(recognition["param"]["roi"][2], 200)
+        self.assertEqual(self.action(selector)["type"], "Click")
+        self.assertEqual(
+            self.next_names(selector),
+            [
+                "Collect_IM_Move_MGS",
+                "Collect_IM_OnFoot_Moveing",
+                "Global_WaitingForLoading",
+                "Collect_ReturnToExplorationBoard_Arrived",
+            ],
+        )
+
+        self.assertEqual(opener["max_hit"], 4)
+        self.assertEqual(selector["max_hit"], 4)
+
+        arrived = self.node("Collect_ReturnToExplorationBoard_Arrived")
+        self.assertEqual(
+            self.next_names(arrived),
+            ["ExplorationBoard_Arrived"],
+        )
+
     def test_quick_hunt_map_swipes_preserve_end_hold_through_bridge_action(self) -> None:
         expected_points = {
             "QuickHunt_CollectMap_SwipLeft": ([556, 32], [624, 580]),

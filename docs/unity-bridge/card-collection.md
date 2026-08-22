@@ -12,6 +12,7 @@
 | `assets/resource/base/pipeline/Collect_Launcher.json` | 跨渠道的卡带调度基础流程 |
 | `assets/resource/pc/pipeline/Collect_Launcher.json` | PC 页签 ROI 和阈值覆盖 |
 | `assets/resource/pc/pipeline/Collect_Navigation.json` | PC 地图导航覆盖 |
+| `assets/resource/pc/pipeline/Collect_Story14.json` | 剧情14左右回廊的 PC 专用步行模块 |
 | `assets/resource/bridge/pipeline/Collect_Launcher.json` | Bridge 快捷键、类别门控和出口 |
 | `tests/test_unity_bridge_pipeline.py` | 快捷键、范围和剧情入口的离线契约 |
 
@@ -31,6 +32,12 @@ Windows VK 映射：
 
 - 主键盘 `0–9`：`48–57`；
 - `F1–F9`：`112–120`。
+
+## 回到探索告示板
+
+PC 通用入口为 `Collect_ReturnToExplorationBoard`。它先复用已实机校准的 `Nvi_SandGuideButt_PC.png` 定位小地图旁的寻路按钮；列表展开后，在左侧完整下拉区域内 OCR 查找“探索告示板”并点击识别框中心，因此不依赖选项数量或固定纵坐标。流程兼容“自动移动”确认框、移动中状态和加载状态，抵达后通过可选锚点 `ExplorationBoard_Arrived` 交还控制权；调用方未设置锚点时正常结束。
+
+该节点是 PC 坐标流程，只定义在 `assets/resource/pc/pipeline/Collect_Navigation.json`。实机分级验证先运行 `Collect_ReturnToExplorationBoard_Open` 的 recognition 模式确认按钮模板，再运行入口的 flow 模式；后者会实际点击并移动角色。
 
 ## `[完整]` 与 `[单章]`
 
@@ -164,6 +171,18 @@ tag 默认 0 是剧情允许态，但生产类别选择链必须在路由前刷�
 **当前实现：** PC 的 `Collect_MapRight` 无论帧差是否超过阈值都只走一次点击结果，`unchanged_streak = 1`；若点击实际未生效，后续地图识别仍停在当前状态并可重新进入采集链。
 
 **验证方式：** 这是通用 PC 地图采集行为，不属于 Unity Bridge 单元测试。实机验收检查目标地图、`Collect_Skill3_2` 和剧情完成标记；若补自动化回归，应放入通用地图采集测试。
+
+### 剧情 14 漏采无传送阵回廊
+
+**现象：** 阿尔卡迪亚居住区域包含剑之神殿左侧回廊与中央回廊；截图右边的按钮是中央回廊，该区域没有传送阵，通用传送阵导航会漏采。
+
+**根因：** 按键传送进入卡带时，起点传送图标可能在区域地图上覆盖战斗区域图标；同时角色当前位置也可能让头像遮住导航地图中左侧回廊的一部分可点击区域。直接从不稳定落点选图会点中错误对象，或无法打开“自动移动”确认。
+
+**当前实现：** 剧情 14 使用探索告示板作为两次地图导航的稳定起点，不再使用按键传送定位，也不改写 `TargetMap2/3`。完整顺序为：进入后回探索告示板并采集告示板所在区域；展开地图步行到左侧回廊并采集；再次回探索告示板；再展开地图步行到中央回廊并完成最后一次采集。两次回告示板复用 PC 通用入口 `Collect_ReturnToExplorationBoard`，两次地图步行沿用“自动移动”确认、移动中和加载识别。技能出口和告示板抵达出口分别通过 `OnFoot_Skill`、`ExplorationBoard_Arrived` 锚点串联，最后进入通用步行模块收尾并记录卡带完成。
+
+**坐标边界：** 左右入口坐标来自 PC 1280×720 管线画面的实机测量，仅写入 `assets/resource/pc`，不作为安卓/base 坐标使用。
+
+**验证方式：** 离线回归锁定两次告示板归位、三段技能出口、PC 地图落点、移动确认链、公共导航零剧情专属引用以及完成标记，并禁止剧情 14 引用 `Collect_ForceTeleporCircle` 和 `Collect_OperationsMain_Sandplay`。实机验收顺序必须是“告示板采集 → 左侧采集 → 回告示板 → 中央采集”，最后出现 `Story_14_神圣审判` 完成标记。
 
 ### `Collect_MapLift` 返回 false
 

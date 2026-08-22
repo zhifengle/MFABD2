@@ -534,7 +534,7 @@
         "post_delay": 5000,
         "next": [
             "[JumpBack]Global_WaitingForLoading",
-            "Collect_OperationsMain_Sandplay",
+            "Collect_Story14_Init",
             "Collect_Pack_KeyClick_Story_14"
         ]
     },
