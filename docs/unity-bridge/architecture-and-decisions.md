@@ -86,6 +86,12 @@ Bridge 的快捷键已经覆盖可采集卡带，不需要大幅横向滑动，�
 
 Raycast 命中对象不代表存在 click handler。`no-click-handler` 是有诊断价值的动作失败，不能在 Controller 层全局改成成功。已知的边界点击应由具体 pipeline 状态吸收，其他节点仍保留严格语义。
 
+BD2 场景地面 `TouchScreen` 不能只用 uGUI click：游戏的 `TouchPadScreen.OnPress()`
+还会读取 `Input.GetMouseButton(0)` 和 `Input.mousePosition`。Bridge 插件对该目标使用
+进程内 `bd2-touchpad` 路由，直接驱动游戏 TouchPad 并注入请求坐标；普通按钮仍走
+`unity-event-system`。不要回退到 Win32 `PostMessageWithWindowPos`，该路径已观察到
+窗口随鼠标移动，且会破坏 Bridge 的后台输入边界。
+
 ### 需要 end_hold 的滑动使用 Bridge 专用动作
 
 MaaFramework Custom Controller 的 `swipe(x1, y1, x2, y2, duration)` 回调不包含 Pipeline Swipe 的 `end_hold`，直接走 Controller 会在到达终点后立刻抬起。插件协议本身支持 `endHoldMs`，因此 Bridge 最终资源中所有声明有效 `end_hold` 的原生 Swipe 都由 `UnityBridgeSwipe` CustomAction 接管，把 `begin`、`end`、`duration`、`end_hold` 和 `steps` 直接交给插件。

@@ -310,7 +310,7 @@ class UnityBridgeClient:
         button: str = "left",
         timeout_ms: int = 1500,
     ) -> bool:
-        """发送 action=click，进程内 RaycastAll + PointerClick。
+        """发送 action=click，由插件选择 uGUI 或 BD2 TouchPad 输入路径。
 
         坐标以 1280×720 为基准，附带 referenceWidth/referenceHeight
         由 bridge 缩放到游戏实际内部分辨率。

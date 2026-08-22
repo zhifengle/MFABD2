@@ -81,6 +81,24 @@ class UnityBridgeClientDiagnosticsTests(unittest.TestCase):
             self.assertIn("hitCount='2'", description)
             self.assertIn("x=247,y=356", description)
 
+    def test_successful_touchpad_click_retains_input_route(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            bridge_dir = Path(directory)
+            client = UnityBridgeClient(str(bridge_dir))
+            responder = self._respond_once(
+                bridge_dir,
+                {
+                    "ok": "1",
+                    "status": "clicked",
+                    "inputRoute": "bd2-touchpad",
+                    "targetPath": "GameFieldDefaultUI/Parent/TouchScreen",
+                },
+            )
+
+            self.assertTrue(client.click(247, 356))
+            responder.join(timeout=2)
+            self.assertEqual(client.last_result["inputRoute"], "bd2-touchpad")
+
     def test_timeout_retains_request_state_and_cleans_pending_request(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             client = UnityBridgeClient(directory)
