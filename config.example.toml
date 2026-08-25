@@ -6,14 +6,11 @@
 dir = ""
 
 [task]
-name = "[执行]地图采集[完整]"
-account_id = "0"
-timeout = 1200
-
-[[task.options]]
-name = "采集卡带屏蔽"
-value = "Yes"
-
-[[task.options]]
-name = "故事卡带屏蔽"
-value = "3"
+name = "[领取]日常任务"
+options = [
+    {name = "餐馆领装饰币", value = "No"},
+    {name = "餐馆自动升级", value = "No"},
+    {name = "广场每日祈求", value = "No"},
+    {name = "亲密度谈心", value = "No"},
+    {name = "亲密度谈心等级筛选", value = "Lv<10"}
+]

@@ -19,44 +19,91 @@ continue_on_error = true
 name = "[全局]启动脚本(置顶)PC"
 enabled = false
 options = [
-    {name = "前置助手", value = "按需"}
+    {name = "前置助手", value = "按需"},
+    {name = "多存档", value = "No"},
+    {name = "存档名称", value = "0"}
 ]
 
 [[tasks]]
 name = "[执行]快速狩猎扫荡"
 enabled = true
+options = [
+    {name = "冒险航线", value = "Yes"},
+    {name = "双倍策略", value = "优先双倍"},
+    {name = "资源策略", value = "优先金币"},
+    {name = "米饭分配次数", value = "狩猎场x1 / 双倍图MAX"},
+    {name = "狩猎场", value = "Yes"},
+    {name = "章节图策略", value = "矿石·章节7"},
+    {name = "圣石洞穴属性", value = "光"}
+]
 
 [[tasks]]
 name = "[执行]装备制作&炼制日常"
-enabled = true
+enabled = false
 options = [
+    {name = "精炼装备阶级", value = "UR"},
+    {name = "仅精炼<17 或 <10", value = "低于17阶"},
     {name = "精炼按自定义标志排序", value = "Yes"},
-    {name = "仅精炼<17 或 <10", value = "低于17阶"}
+    {name = "精炼类别倾向应用-按需|强制", value = "No"},
+    {name = "精炼类别倾向-专武|制作", value = "No"}
 ]
 
 [[tasks]]
 name = "[执行]白嫖抽卡"
 enabled = true
+options = [
+    {name = "一键速抽", value = "Yes"},
+    {name = "5星必出保留", value = "No"},
+    {name = "付费钻-总开关", value = "No"},
+    # {name = "90付费抽目标卡池", value = "xxx"}
+]
 
 [[tasks]]
 name = "[执行]地图采集[单章]"
 enabled = false
+options = [
+    {name = "采集卡带屏蔽", value = "No"},
+    # 以下屏蔽名单默认留空；需要启用时请填写名称后取消注释
+    # {name = "故事卡带屏蔽", value = ""},
+    # {name = "角色卡带屏蔽", value = ""},
+    # {name = "活动卡带屏蔽", value = ""},
+    {name = "第三图采集额外等待", value = "200"}
+]
 
 [[tasks]]
 name = "[执行]竞技场"
 enabled = true
+options = [
+    {name = "竞技场战斗倍数", value = "40倍"}
+]
 
 [[tasks]]
 name = "[执行]赛季活动快速战斗"
 enabled = true
+options = [
+    {name = "赛季活动快速战斗难度", value = "自动"},
+    {name = "魔兽初始等级", value = "1"}
+]
 
 [[tasks]]
 name = "[执行]周常任务"
 enabled = true
+options = [
+    {name = "末日之书", value = "Yes"},
+    {name = "小屋点赞", value = "Yes"},
+    {name = "周常钓鱼", value = "No"}
+]
 
 [[tasks]]
 name = "[领取]日常任务"
 enabled = true
+options = [
+    {name = "餐馆领装饰币", value = "Yes"},
+    {name = "餐馆自动升级", value = "No"},
+    {name = "广场每日祈求", value = "Yes"},
+    {name = "亲密度谈心", value = "No"},
+    {name = "亲密度谈心等级筛选", value = "Lv<10"}
+]
 
 [[tasks]]
 name = "[领取]任务页(每日/每周)"
@@ -65,6 +112,9 @@ enabled = true
 [[tasks]]
 name = "[领取]活动页奖励"
 enabled = true
+options = [
+    {name = "进入前先领取邮件", value = "Yes"}
+]
 
 [[tasks]]
 name = "[领取]通行证奖励"
@@ -77,12 +127,30 @@ enabled = true
 [[tasks]]
 name = "[执行]商店套利"
 enabled = false
+options = [
+    {name = "利润商品-低价进货", value = "Yes"},
+    {name = "购买收藏扫描（每周|每次）", value = "Yes"},
+    {name = "利润商品-最高价抛售", value = "Yes"},
+    {name = "抛售行为保险", value = "Yes"},
+    # 待售附加物品默认留空；需要时请填写物品名后取消注释
+    # {name = "待出售的物品", value = ""},
+    {name = "利润料理-制作", value = "Yes"},
+    {name = "料理制作保险", value = "Yes"},
+    {name = "料理制作周期（每次|每周）", value = "Yes"},
+    {name = "5星料理开关", value = "卢戈山参烤串,煤炭饼干,闪闪铁板虾,透明沙拉,地狱火紫菜包饭"}
+]
 
 [[tasks]]
 name = "[执行]地图采集[完整]"
-enabled = true
+enabled = false
 options = [
-    {name = "简单类跳过", value = "Yes"}
+    {name = "简单类跳过", value = "Yes"},
+    {name = "采集卡带屏蔽", value = "No"},
+    # 以下屏蔽名单默认留空；需要启用时请填写名称后取消注释
+    # {name = "故事卡带屏蔽", value = ""},
+    # {name = "角色卡带屏蔽", value = ""},
+    # {name = "活动卡带屏蔽", value = ""},
+    {name = "第三图采集额外等待", value = "200"}
 ]
 
 [[tasks]]
