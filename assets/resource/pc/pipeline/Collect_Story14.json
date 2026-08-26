@@ -1,6 +1,6 @@
 {
     "Collect_Story14_Init": {
-        "desc": "剧情14进入后安装完成标记，以探索告示板作为稳定采集起点。",
+        "desc": "剧情14进入后安装完成标记并注册收尾回归锚，以探索告示板作为稳定采集起点。",
         "recognition": "Or",
         "any_of": ["Rec_SandBox_Pin_Tpl", "Rec_SandBox_Run_Tpl"],
         "action": "Custom",
@@ -17,7 +17,8 @@
             }
         },
         "anchor": {
-            "ExplorationBoard_Arrived": "Collect_Story14_Board_Arrived"
+            "ExplorationBoard_Arrived": "Collect_Story14_Board_Arrived",
+            "IM_Reset_Next": "Collect_Story14_AfterReset"
         },
         "next": ["Collect_ReturnToExplorationBoard"],
         "focus": "C14.先回到探索告示板"
@@ -133,5 +134,19 @@
         },
         "next": ["Collect_Skill_Start"],
         "focus": "C14.采集剑之神殿中央回廊"
+    },
+    "Collect_Story14_AfterReset": {
+        "desc": "剧情14收尾：完成标记与环境还原已在 Collect_IM_Closure/Collect_IM_Reset 完成；此处调出快速卡带菜单，交还卡带循环继续后续卡带。顺带清回归锚，防止同任务内后续步行流程误入。",
+        "recognition": "Or",
+        "any_of": [
+            "Global_QuickCart_MenuReset_Ocr",
+            "Rec_SandBox_Pin_Tpl",
+            "Rec_SandBox_Run_Tpl"
+        ],
+        "anchor": {
+            "IM_Reset_Next": ""
+        },
+        "next": ["Global_QuickCart_MenuReset"],
+        "focus": "C14.回到快速卡带菜单"
     }
 }

@@ -593,5 +593,17 @@
             "移动魔法阵",
             "移動魔法陣"
         ]
+    },
+    "Collect_IM_Reset": {
+        "next": [
+            "[Anchor]IM_Reset_Next",
+            "Collect_IM_Reset_End"
+        ]
+    },
+    "Collect_IM_Reset_End": {
+        "desc": "[PC] 卡带回归锚未注册时的安静终点：等价于 base 无 next 的原收尾语义（任务收尾或回跳调用链）。",
+        "recognition": "DirectHit",
+        "pre_delay": 0,
+        "post_delay": 0
     }
 }

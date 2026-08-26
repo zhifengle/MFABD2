@@ -316,6 +316,39 @@ class UnityBridgePipelineTests(unittest.TestCase):
                 f"公共文件不应定义或引用剧情14节点: {common_file}",
             )
 
+    def test_story_fourteen_returns_to_cartridge_menu_after_closure(self) -> None:
+        init = self.node("Collect_Story14_Init")
+        self.assertEqual(
+            init["anchor"]["IM_Reset_Next"],
+            "Collect_Story14_AfterReset",
+        )
+
+        after_reset = self.node("Collect_Story14_AfterReset")
+        self.assertEqual(
+            self.next_names(after_reset),
+            ["Global_QuickCart_MenuReset"],
+        )
+        self.assertEqual(after_reset["anchor"], {"IM_Reset_Next": ""})
+        recognition = after_reset["recognition"]
+        self.assertEqual(recognition["type"], "Or")
+        self.assertIn(
+            "Global_QuickCart_MenuReset_Ocr",
+            recognition["param"]["any_of"],
+        )
+
+        reset = self.node("Collect_IM_Reset")
+        self.assertEqual(
+            self.next_names(reset),
+            ["IM_Reset_Next", "Collect_IM_Reset_End"],
+        )
+        reset_first = reset["next"][0]
+        self.assertTrue(reset_first["anchor"])
+        self.assertEqual(reset_first["name"], "IM_Reset_Next")
+        end = self.node("Collect_IM_Reset_End")
+        self.assertEqual(end["recognition"]["type"], "DirectHit")
+        self.assertEqual(self.next_names(end), [])
+        self.assertNotIn("Collect_Story14", json.dumps(end, ensure_ascii=False))
+
     def test_pc_return_to_exploration_board_uses_dynamic_ocr_target(self) -> None:
         entry = self.node("Collect_ReturnToExplorationBoard")
         self.assertEqual(

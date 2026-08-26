@@ -180,9 +180,11 @@ tag 默认 0 是剧情允许态，但生产类别选择链必须在路由前刷�
 
 **当前实现：** 剧情 14 使用探索告示板作为两次地图导航的稳定起点，不再使用按键传送定位，也不改写 `TargetMap2/3`。完整顺序为：进入后回探索告示板并采集告示板所在区域；展开地图步行到左侧回廊并采集；再次回探索告示板；再展开地图步行到中央回廊并完成最后一次采集。两次回告示板复用 PC 通用入口 `Collect_ReturnToExplorationBoard`，两次地图步行沿用“自动移动”确认、移动中和加载识别。技能出口和告示板抵达出口分别通过 `OnFoot_Skill`、`ExplorationBoard_Arrived` 锚点串联，最后进入通用步行模块收尾并记录卡带完成。
 
+**流程收尾与卡带循环：** 中央回廊最后一次采集后，`Collect_IM_Closure` 打完成标记、`Collect_IM_Reset` 还原环境；随后剧情14专用回归节点 `Collect_Story14_AfterReset` 调出快速卡带菜单，交还卡带循环继续后续卡带（与通用剧情收尾一致，不再单卡即止）。回归出口由 `Collect_IM_Reset` 的 PC 覆盖 + `IM_Reset_Next` 锚点门控：剧情14 在 `Collect_Story14_Init` 注册该锚、在回归节点处清锚；其他步行流程未注册该锚，`Collect_IM_Reset` 走 `Collect_IM_Reset_End` 安静终点，保持原有收尾语义不变。
+
 **坐标边界：** 左右入口坐标来自 PC 1280×720 管线画面的实机测量，仅写入 `assets/resource/pc`，不作为安卓/base 坐标使用。
 
-**验证方式：** 离线回归锁定两次告示板归位、三段技能出口、PC 地图落点、移动确认链、公共导航零剧情专属引用以及完成标记，并禁止剧情 14 引用 `Collect_ForceTeleporCircle` 和 `Collect_OperationsMain_Sandplay`。实机验收顺序必须是“告示板采集 → 左侧采集 → 回告示板 → 中央采集”，最后出现 `Story_14_神圣审判` 完成标记。
+**验证方式：** 离线回归锁定两次告示板归位、三段技能出口、PC 地图落点、移动确认链、公共导航零剧情专属引用以及完成标记，并禁止剧情 14 引用 `Collect_ForceTeleporCircle` 和 `Collect_OperationsMain_Sandplay`。实机验收顺序必须是“告示板采集 → 左侧采集 → 回告示板 → 中央采集”，最后出现 `Story_14_神圣审判` 完成标记，随后应回到快速卡带菜单并继续采集剩余待完成卡带（不再单卡即止）。
 
 ### `Collect_MapLift` 返回 false
 
