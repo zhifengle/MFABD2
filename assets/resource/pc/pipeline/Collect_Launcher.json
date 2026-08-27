@@ -59,6 +59,10 @@
             "店長遊戲卡"
         ]
     },
+    "Collect_QuickCart_ManagerPack_OcrCheck": {
+        "desc": "PC:同EventPack,base count 500在PC不可达,预防性下调300",
+        "count": 300
+    },
     "Collect_QuickCart_SelectType_BattleplayPack": {
         "roi": [
             15,
@@ -71,6 +75,10 @@
             "戰鬥遊戲卡"
         ]
     },
+    "Collect_QuickCart_BattleplayPack_OcrCheck": {
+        "desc": "PC:同EventPack,base count 500在PC不可达,预防性下调300",
+        "count": 300
+    },
     "Collect_QuickCart_SelectType_LifeplayPack": {
         "roi": [
             15,
@@ -82,6 +90,10 @@
             "生活玩法游戏卡",
             "生活遊戲卡"
         ]
+    },
+    "Collect_QuickCart_LifeplayPack_OcrCheck": {
+        "desc": "PC:同EventPack,base count 500在PC不可达,预防性下调300",
+        "count": 300
     },
     "Collect_FirstBootPack_To1": {
         "target": [
