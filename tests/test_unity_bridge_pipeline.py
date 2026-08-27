@@ -140,6 +140,23 @@ class UnityBridgePipelineTests(unittest.TestCase):
         self.assertEqual(params["unchanged_streak"], 1)
         self.assertNotIn("loop_limit", params)
 
+    def test_story_nineteen_special_map_reenters_third_map_state(self) -> None:
+        special = self.node("Collect_TargetMap4_Special")
+        self.assertEqual(
+            special["recognition"]["param"]["expected"],
+            ["通往暗夜世界入口之路", "通往夜世界入口的路"],
+        )
+        self.assertEqual(len(special["next"]), 1)
+        successor = special["next"][0]
+        self.assertEqual(successor["name"], "Collect_TargetMap3")
+        self.assertFalse(successor["jump_back"])
+        self.assertFalse(successor["anchor"])
+
+        third_map = self.node("Collect_TargetMap3")
+        expected = third_map["recognition"]["param"]["expected"]
+        self.assertIn("通往暗夜世界入口之路", expected)
+        self.assertIn("通往夜世界入口的路", expected)
+
     def test_character_three_terminal_requires_unique_map_and_no_right_page(self) -> None:
         terminal = self.node("Collect_Character3_Battle3_End")
         all_of = terminal["recognition"]["param"]["all_of"]
