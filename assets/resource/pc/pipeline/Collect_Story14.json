@@ -1,18 +1,26 @@
 {
     "Collect_Story14_Init": {
-        "desc": "剧情14进入后安装完成标记并注册收尾回归锚，以探索告示板作为稳定采集起点。",
+        "desc": "剧情14进入后安装完成标记，并临时放宽返回探索告示板按钮阈值；横幅遮挡导致仍未命中时只在本剧情内等待重试。",
         "recognition": "Or",
         "any_of": ["Rec_SandBox_Pin_Tpl", "Rec_SandBox_Run_Tpl"],
         "action": "Custom",
         "custom_action": "PatchPipeline",
         "custom_action_param": {
-            "target": "Collect_IM_Closure",
-            "patch": {
-                "action": "Custom",
-                "custom_action": "MarkComplete",
-                "custom_action_param": {
-                    "card_name": "Story_14_神圣审判",
-                    "cycle_type": "g_weekly"
+            "patches": {
+                "Collect_IM_Closure": {
+                    "action": "Custom",
+                    "custom_action": "MarkComplete",
+                    "custom_action_param": {
+                        "card_name": "Story_14_神圣审判",
+                        "cycle_type": "g_weekly"
+                    }
+                },
+                "Collect_ReturnToExplorationBoard_Open": {
+                    "threshold": 0.6,
+                    "on_error": [
+                        "Collect_Story14_ReturnBoard_Open_Wait",
+                        "Collect_Story14_ReturnBoard_Failed"
+                    ]
                 }
             }
         },
@@ -22,6 +30,41 @@
         },
         "next": ["Collect_ReturnToExplorationBoard"],
         "focus": "C14.先回到探索告示板"
+    },
+    "Collect_Story14_ReturnBoard_Open_Wait": {
+        "desc": "剧情14专用：寻路按钮被横幅遮挡时等待一秒再重试；不修改 upstream 通用节点的静态定义。",
+        "max_hit": 15,
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "post_delay": 1000,
+        "next": ["Collect_ReturnToExplorationBoard_Open"],
+        "on_error": ["Collect_Story14_ReturnBoard_Failed"],
+        "focus": "C14.[WRN]寻路按钮被遮挡，等待后重试"
+    },
+    "Collect_Story14_ReturnBoard_Failed": {
+        "desc": "剧情14专用：返回探索告示板重试耗尽，先还原运行时补丁。",
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "RestorePipeline",
+        "custom_action_param": {
+            "target": [
+                "Collect_IM_Closure",
+                "Collect_ReturnToExplorationBoard_Open"
+            ]
+        },
+        "anchor": {
+            "ExplorationBoard_Arrived": "",
+            "OnFoot_Skill": "",
+            "IM_Reset_Next": ""
+        },
+        "next": ["Collect_Story14_ReturnBoard_Failed_Stop"],
+        "focus": "C14.[ERR]返回探索告示板失败，清理环境"
+    },
+    "Collect_Story14_ReturnBoard_Failed_Stop": {
+        "desc": "剧情14无法返回探索告示板，停止当前地图采集任务。",
+        "recognition": "DirectHit",
+        "action": "StopTask",
+        "focus": "C14.[ERR]返回探索告示板重试耗尽"
     },
     "Collect_Story14_Board_Arrived": {
         "desc": "抵达探索告示板，以此为稳定起点完成第一段采集。",
@@ -136,7 +179,7 @@
         "focus": "C14.采集剑之神殿中央回廊"
     },
     "Collect_Story14_AfterReset": {
-        "desc": "剧情14收尾：完成标记与环境还原已在 Collect_IM_Closure/Collect_IM_Reset 完成；此处调出快速卡带菜单，交还卡带循环继续后续卡带。顺带清回归锚，防止同任务内后续步行流程误入。",
+        "desc": "剧情14收尾：完成标记与通用步行环境已还原；此处还原剧情14对寻路按钮的临时覆盖，再调出快速卡带菜单继续后续卡带。",
         "recognition": "Or",
         "any_of": [
             "Global_QuickCart_MenuReset_Ocr",
@@ -145,6 +188,11 @@
         ],
         "anchor": {
             "IM_Reset_Next": ""
+        },
+        "action": "Custom",
+        "custom_action": "RestorePipeline",
+        "custom_action_param": {
+            "target": ["Collect_ReturnToExplorationBoard_Open"]
         },
         "next": ["Global_QuickCart_MenuReset"],
         "focus": "C14.回到快速卡带菜单"

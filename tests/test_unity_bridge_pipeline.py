@@ -140,6 +140,95 @@ class UnityBridgePipelineTests(unittest.TestCase):
         self.assertEqual(params["unchanged_streak"], 1)
         self.assertNotIn("loop_limit", params)
 
+    def test_bridge_uses_digit_one_in_place_of_teleport_circle_click(self) -> None:
+        pc_circle = self.pc_resource.get_node_data("Collect_ClickTeleporCircleIco")
+        bridge_circle = self.node("Collect_ClickTeleporCircleIco")
+        self.assertIn(
+            "Collect_ClickTelepor_TargetClass_Inactive_PC",
+            self.next_names(pc_circle),
+        )
+        self.assertEqual(
+            self.next_names(bridge_circle),
+            [
+                "Collect_ClickTelepor_TargetClass_Purple",
+                "Collect_ClickTelepor_TargetClass_White",
+            ],
+        )
+
+        pc_click = self.pc_resource.get_node_data(
+            "Collect_ClickTelepor_TargetClass_White"
+        )
+        bridge_click = self.node("Collect_ClickTelepor_TargetClass_White")
+        self.assertEqual(self.action(pc_click)["type"], "Click")
+        self.assertEqual(self.action(bridge_click)["type"], "ClickKey")
+        self.assertEqual(self.action(bridge_click)["param"]["key"], [49])
+        self.assertEqual(vk_to_unity_key(49), "digit1")
+
+        # Recognition and wait remain inherited. The successor list is the
+        # original base chain, without the PC-only inactive-color guard.
+        self.assertEqual(bridge_click["recognition"], pc_click["recognition"])
+        self.assertEqual(bridge_click["post_delay"], pc_click["post_delay"])
+        self.assertIn(
+            "Collect_ClickTelepor_TargetClass_Inactive_PC",
+            self.next_names(pc_click),
+        )
+        self.assertEqual(
+            self.next_names(bridge_click),
+            [
+                "Arbitrage5",
+                "Collect_Skill_Start",
+                "Collect_ClickTelepor_TargetClass_White",
+                "Global_WaitingForLoading",
+            ],
+        )
+        self.assertNotIn(
+            "Collect_ClickTelepor_Key2_Bridge",
+            self.resource.node_list,
+        )
+
+    def test_bridge_checks_definitive_no_active_teleport_text_before_key_path(
+        self,
+    ) -> None:
+        no_active = self.node("Collect_ClickTelepor_ButNotActive")
+        pc_no_active = self.pc_resource.get_node_data(
+            "Collect_ClickTelepor_ButNotActive"
+        )
+        self.assertEqual(no_active, pc_no_active)
+        self.assertEqual(
+            self.next_names(no_active),
+            ["Collect_OperationsMain_OperationsEnd"],
+        )
+
+        for node_name in (
+            "Collect_TargetMap1-2",
+            "Collect_TargetMap2",
+            "Collect_TargetMap3",
+            "Collect_TargetMap4",
+        ):
+            with self.subTest(node=node_name):
+                next_names = self.next_names(self.node(node_name))
+                self.assertLess(
+                    next_names.index("Collect_ClickTelepor_ButNotActive"),
+                    next_names.index("Collect_ClickTeleporCircleIco"),
+                )
+
+        # Bridge does not replace the surrounding navigation state machine.
+        for node_name in (
+            "Collect_TargetMap1-2",
+            "Collect_TargetMap2",
+            "Collect_TargetMap3",
+            "Collect_TargetMap4",
+            "Collect_TargetMap_Special_ClickTpCircleIco",
+            "Collect_TeleporNotFind",
+            "Collect_TeleporNotFind_Right",
+            "Collect_TeleporNotFind_NORight",
+        ):
+            with self.subTest(original_flow=node_name):
+                self.assertEqual(
+                    self.next_names(self.node(node_name)),
+                    self.next_names(self.pc_resource.get_node_data(node_name)),
+                )
+
     def test_story_nineteen_special_map_reenters_third_map_state(self) -> None:
         special = self.node("Collect_TargetMap4_Special")
         self.assertEqual(
@@ -223,10 +312,11 @@ class UnityBridgePipelineTests(unittest.TestCase):
         )
 
         init = self.node("Collect_Story14_Init")
-        closure_patch = self.action(init)["param"]["custom_action_param"]
-        self.assertEqual(closure_patch["target"], "Collect_IM_Closure")
+        closure_patch = self.action(init)["param"]["custom_action_param"]["patches"][
+            "Collect_IM_Closure"
+        ]
         self.assertEqual(
-            closure_patch["patch"]["custom_action_param"]["card_name"],
+            closure_patch["custom_action_param"]["card_name"],
             "Story_14_神圣审判",
         )
         self.assertEqual(

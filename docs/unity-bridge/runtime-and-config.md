@@ -130,9 +130,6 @@ continue_on_error = true
 [[tasks]]
 name = "[全局]启动脚本(置顶)PC"
 enabled = true
-options = [
-  { name = "前置助手", value = "按需" },
-]
 
 [[tasks]]
 name = "[执行]快速狩猎扫荡"

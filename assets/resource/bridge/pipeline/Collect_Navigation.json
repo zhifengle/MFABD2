@@ -1,0 +1,20 @@
+{
+    "Collect_ClickTeleporCircleIco": {
+        "desc": "[Unity Bridge] 保留区域地图传送阵模板作为选图页门卫；是否无已激活魔法阵由前置 OCR 文案判定，不继承 PC 的灰阵色核误判分支。",
+        "next": [
+            "Collect_ClickTelepor_TargetClass_Purple",
+            "Collect_ClickTelepor_TargetClass_White"
+        ]
+    },
+    "Collect_ClickTelepor_TargetClass_White": {
+        "desc": "[Unity Bridge] 保留原传送阵识别和后继链，仅用主键盘 1 替代坐标点击；该节点只会在区域地图选图页命中。",
+        "action": "ClickKey",
+        "key": [49],
+        "next": [
+            "[Anchor]Arbitrage5",
+            "Collect_Skill_Start",
+            "Collect_ClickTelepor_TargetClass_White",
+            "[JumpBack]Global_WaitingForLoading"
+        ]
+    }
+}

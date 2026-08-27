@@ -14,6 +14,7 @@
 | `assets/resource/pc/pipeline/Collect_Navigation.json` | PC 地图导航覆盖 |
 | `assets/resource/pc/pipeline/Collect_Story14.json` | 剧情14左右回廊的 PC 专用步行模块 |
 | `assets/resource/bridge/pipeline/Collect_Launcher.json` | Bridge 快捷键、类别门控和出口 |
+| `assets/resource/bridge/pipeline/Collect_Navigation.json` | Bridge 区域地图传送阵快捷键覆盖 |
 | `tests/test_unity_bridge_pipeline.py` | 快捷键、范围和剧情入口的离线契约 |
 
 修改时必须检查 `base → pc → bridge` 的最终合并结果。
@@ -151,6 +152,16 @@ Bridge 使用 `NonStoryPackActive` tag：
 tag 默认 0 是剧情允许态，但生产类别选择链必须在路由前刷新它。不要在被 `all_of` 按名称引用的识别 node 顶层加入 `inverse: true`；MaaFW 实机行为不会按这里需要的方式应用该 inverse。
 
 ## 已知故障与当前实现
+
+### 区域地图传送阵误判
+
+**现象：** PC 图标点击偶发选错区域地图上的对象，或 PC 灰阵色核把可用传送阵误判为未激活，导致本张地图未传送。
+
+**事实边界：** 主键盘 `1` 只在“移动魔法阵”的区域地图选择页触发第一个可用传送阵；本流程不尝试 `2`。“没有已激活的魔法阵。”文案是当前地图无可用传送阵的确定信号。
+
+**当前实现：** Unity Bridge 保留原有地图名称判断、无阵 OCR、传送阵模板门卫、紫阵规避、技能/加载等待、右翻页和末页退出流程。`Collect_ClickTelepor_ButNotActive` 直接继承 PC 已有 OCR，不做 Bridge 重复覆盖。仅在最终原本点击白色传送阵的节点把 `Click` 覆盖为 `ClickKey [49]`，并且不继承 PC 的灰阵色核分支：命中无阵文案时按原流程结束当前卡带；未命中时仍须先通过传送阵模板门卫才会发送 `1`。普通 PC GUI 继续使用原点击与灰阵保护，不受影响。
+
+**验证方式：** 离线测试锁定 `base → pc → bridge` 合并后只有动作发生替换，并锁定无阵 OCR 位于通用地图节点的传送路径之前。实机验证须在区域地图选择页观察：有可用传送阵时发送一次 `1` 并进入技能/加载链；显示无阵文案时不发送按键，继续原退出或换图流程。
 
 ### 活动卡带页签死循环
 
