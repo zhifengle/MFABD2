@@ -9,7 +9,6 @@
 ```powershell
 git status --short
 uv run python -m unittest discover -v
-uv run agent/run_batch_tasks.py --config config.daily-quick.toml --dry-run
 ```
 
 工作区可能含有其他人的未提交修改。保留无关改动，不要使用 `git reset --hard`、`git checkout --` 等命令覆盖现场。
@@ -18,10 +17,12 @@ uv run agent/run_batch_tasks.py --config config.daily-quick.toml --dry-run
 
 | 任务 | 文档 |
 | --- | --- |
+| 选择工作分支、同步上游、提升或拆分提交 | [分支管理](branch-management.md) |
 | 运行单任务、维护 TOML、检查批处理或 Ctrl+C | [运行与配置](runtime-and-config.md) |
 | 检查最终 node、设计最小复现、分析日志 | [测试与排障](testing-and-debugging.md) |
-| 修改地图采集、卡带选择、快捷键或屏蔽规则 | [卡带采集](card-collection.md) |
 | 修改控制器、资源加载方式或 pipeline 架构 | [架构与设计决策](architecture-and-decisions.md) |
+
+特有功能分支还会增加对应的业务文档，例如卡带采集说明；这些文档不放入核心框架分支。
 
 ## 能力与边界
 
@@ -31,11 +32,10 @@ MaaFramework 核心支持在同一进程中创建 Custom Controller，但当前 
 
 - 单任务、单 node、连接和坐标点击入口；
 - TOML 驱动的串行批处理；
-- `base → pc → bridge` 三层资源加载；
-- Unity Bridge 专用的卡带快捷键和类别门控；
+- 按存在情况加载 `base → pc → bridge` 三层资源；
 - 不连接游戏的 pipeline 回归测试，以及分级实机 node 实验台。
 
-Bridge 专用行为只放在 `assets/resource/bridge`。普通 PC GUI 只使用 `base + pc`，不应受到 Bridge 键盘选卡方案影响。
+核心分支只提供 Bridge 框架。Bridge 专用业务行为由特有功能分支放入 `assets/resource/bridge`；普通 PC GUI 只使用 `base + pc`，不应受到 Bridge 覆盖影响。
 
 ## 代码地图
 
@@ -46,13 +46,9 @@ Bridge 专用行为只放在 `assets/resource/bridge`。普通 PC GUI 只使用 
 | `agent/utils/unity_bridge_config.py` | 单任务与批处理 TOML 的解析、路径归一化和严格校验 |
 | `agent/controller/unity_win32_controller.py` | MaaFW Unity Bridge 控制器实现 |
 | `agent/utils/unity_bridge.py` | Windows VK 与 Unity Key 等 Bridge 工具 |
-| `assets/interface.json` | 正式任务、选项和 preset；批处理任务必须在这里登记 |
-| `assets/resource/bridge` | Unity Bridge 专用 pipeline 覆盖 |
 | `scripts/unity_bridge_node_lab.py` | 查看或实机执行最终合并 node |
 | `tests/test_unity_bridge_config.py` | 配置、资源顺序和 Ctrl+C 回归 |
 | `tests/test_unity_bridge_client.py` | Bridge 文件协议、超时和失败诊断回归 |
-| `tests/test_unity_bridge_pipeline.py` | 卡带快捷键、范围和剧情入口的离线契约 |
-| `tests/test_steal_avail.py` | 偷窃卡片检测、冷却过滤和混合砍价卡跳过逻辑 |
 
 ## 不变量
 
@@ -77,7 +73,4 @@ Bridge 专用行为只放在 `assets/resource/bridge`。普通 PC GUI 只使用 
 
 ## 提交边界
 
-- 通用修复按可独立向上游提交 PR 的标准整理：不得依赖 PC/Unity Bridge 资源、runner 或自用配置；相关测试和文档也必须能在上游独立使用。
-- `assets/interface.json`、`assets/resource/base` 的跨平台行为通常属于通用修复；`assets/resource/pc`、`assets/resource/bridge` 和 Bridge runner 通常属于自用修改，不混入上游提交。
-- 同一故障涉及两层时，先提交可独立工作的通用修复，再提交 PC/Bridge 适配；后者可以依赖前者，反向不行。
-- 提交前用 `git diff --cached --name-only` 检查边界；通用提交使用 `fix:`，自用适配使用 `fix(PC):` 等明确作用域。
+核心框架、特有功能和开发试验使用不同分支承载；通用 bugfix 只在需要隔离验证时建立临时分支。提交归属、同步顺序及验证后提升规则见[分支管理](branch-management.md)。
