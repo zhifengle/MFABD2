@@ -1,0 +1,16 @@
+# Unity Bridge 单任务配置示例
+# 相对路径以本配置文件所在目录为基准。
+
+[bridge]
+# 留空时从游戏窗口自动发现。
+dir = ""
+
+[task]
+name = "[领取]日常任务"
+options = [
+    {name = "餐馆领装饰币", value = "No"},
+    {name = "餐馆自动升级", value = "No"},
+    {name = "广场每日祈求", value = "No"},
+    {name = "亲密度谈心", value = "No"},
+    {name = "亲密度谈心等级筛选", value = "Lv<10"}
+]

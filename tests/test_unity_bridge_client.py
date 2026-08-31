@@ -1,0 +1,227 @@
+from __future__ import annotations
+
+import os
+import tempfile
+import threading
+import time
+import unittest
+from pathlib import Path
+
+from agent.utils.unity_bridge import UnityBridgeClient
+
+
+class UnityBridgeClientDiagnosticsTests(unittest.TestCase):
+    def _respond_once(self, bridge_dir: Path, fields: dict[str, str]) -> threading.Thread:
+        request_dir = bridge_dir / "requests"
+        response_dir = bridge_dir / "responses"
+
+        def worker() -> None:
+            deadline = time.monotonic() + 2
+            request_path: Path | None = None
+            while time.monotonic() < deadline:
+                requests = list(request_dir.glob("*.request"))
+                if requests:
+                    request_path = requests[0]
+                    break
+                time.sleep(0.005)
+            if request_path is None:
+                return
+
+            request = {}
+            for line in request_path.read_text(encoding="utf-8").splitlines():
+                key, value = line.split("=", 1)
+                request[key] = value
+
+            response = {
+                "protocol": "2",
+                "id": request["id"],
+                **fields,
+            }
+            temporary_path = response_dir / f"{request['id']}.response.tmp"
+            response_path = response_dir / f"{request['id']}.response"
+            temporary_path.write_text(
+                "".join(f"{key}={value}\n" for key, value in response.items()),
+                encoding="utf-8",
+            )
+            os.replace(temporary_path, response_path)
+
+        thread = threading.Thread(target=worker)
+        thread.start()
+        return thread
+
+    def _respond_sequence(
+        self, bridge_dir: Path, responses: list[dict[str, str]]
+    ) -> threading.Thread:
+        """Respond to N sequential requests with the given response fields.
+
+        Tracks responded request IDs to avoid re-responding when old request
+        files linger after _send_request consumes the response.
+        """
+        request_dir = bridge_dir / "requests"
+        response_dir = bridge_dir / "responses"
+        remaining = list(responses)
+
+        def worker() -> None:
+            deadline = time.monotonic() + 5
+            responded_ids: set[str] = set()
+            while remaining and time.monotonic() < deadline:
+                for req_path in sorted(request_dir.glob("*.request")):
+                    request = {}
+                    for line in req_path.read_text(encoding="utf-8").splitlines():
+                        key, value = line.split("=", 1)
+                        request[key] = value
+                    req_id = request["id"]
+                    if req_id in responded_ids:
+                        continue
+                    fields = remaining.pop(0)
+                    response = {
+                        "protocol": "2",
+                        "id": req_id,
+                        **fields,
+                    }
+                    tmp = response_dir / f"{req_id}.response.tmp"
+                    resp = response_dir / f"{req_id}.response"
+                    tmp.write_text(
+                        "".join(f"{k}={v}\n" for k, v in response.items()),
+                        encoding="utf-8",
+                    )
+                    os.replace(tmp, resp)
+                    responded_ids.add(req_id)
+                    break
+                time.sleep(0.005)
+
+        thread = threading.Thread(target=worker)
+        thread.start()
+        return thread
+
+    def test_failed_click_retains_bridge_response_details(self) -> None:
+        no_click = {
+            "ok": "0",
+            "status": "no-click-handler",
+            "message": "No IPointerClickHandler was found.",
+            "screenWidth": "1920",
+            "screenHeight": "1080",
+            "unityX": "370.5",
+            "unityY": "546",
+            "hitCount": "2",
+            "targetPath": "",
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            bridge_dir = Path(directory)
+            client = UnityBridgeClient(str(bridge_dir))
+            # 3 = 1 initial + 2 retries (NO_CLICK_HANDLER_RETRIES)
+            responder = self._respond_sequence(bridge_dir, [no_click] * 3)
+
+            self.assertFalse(client.click(247, 356))
+            responder.join(timeout=5)
+
+            result = client.last_result
+            self.assertEqual(result["_action"], "click")
+            self.assertEqual(result["status"], "no-click-handler")
+            self.assertEqual(result["hitCount"], "2")
+            self.assertEqual(result["_requestState"], "responded")
+            description = client.describe_last_result()
+            self.assertIn("status='no-click-handler'", description)
+            self.assertIn("hitCount='2'", description)
+            self.assertIn("x=247,y=356", description)
+
+    def test_click_retries_no_click_handler_then_succeeds(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            bridge_dir = Path(directory)
+            client = UnityBridgeClient(str(bridge_dir))
+            responder = self._respond_sequence(
+                bridge_dir,
+                [
+                    {
+                        "ok": "0",
+                        "status": "no-click-handler",
+                        "message": "No IPointerClickHandler was found.",
+                        "hitCount": "4",
+                    },
+                    {
+                        "ok": "1",
+                        "status": "clicked",
+                        "inputRoute": "unity-event-system",
+                        "targetPath": "Canvas/QuickHunt/Button",
+                    },
+                ],
+            )
+
+            self.assertTrue(client.click(247, 356))
+            responder.join(timeout=5)
+            result = client.last_result
+            self.assertEqual(result["status"], "clicked")
+            self.assertEqual(result["inputRoute"], "unity-event-system")
+
+    def test_successful_touchpad_click_retains_input_route(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            bridge_dir = Path(directory)
+            client = UnityBridgeClient(str(bridge_dir))
+            responder = self._respond_once(
+                bridge_dir,
+                {
+                    "ok": "1",
+                    "status": "clicked",
+                    "inputRoute": "bd2-touchpad",
+                    "targetPath": "GameFieldDefaultUI/Parent/TouchScreen",
+                },
+            )
+
+            self.assertTrue(client.click(247, 356))
+            responder.join(timeout=2)
+            self.assertEqual(client.last_result["inputRoute"], "bd2-touchpad")
+
+    def test_timeout_retains_request_state_and_cleans_pending_request(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            client = UnityBridgeClient(directory)
+
+            self.assertFalse(client.click(247, 356, timeout_ms=10))
+
+            result = client.last_result
+            self.assertEqual(result["_action"], "click")
+            self.assertEqual(result["status"], "timeout")
+            self.assertEqual(result["_requestState"], "pending")
+            self.assertEqual(list((Path(directory) / "requests").glob("*.request")), [])
+            description = client.describe_last_result()
+            self.assertIn("status='timeout'", description)
+            self.assertIn("requestState='pending'", description)
+
+    def test_swipe_serializes_end_hold_for_plugin(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            bridge_dir = Path(directory)
+            client = UnityBridgeClient(str(bridge_dir))
+            captured: dict[str, str] = {}
+
+            request_dir = bridge_dir / "requests"
+            response_dir = bridge_dir / "responses"
+
+            def worker() -> None:
+                deadline = time.monotonic() + 2
+                while time.monotonic() < deadline:
+                    requests = list(request_dir.glob("*.request"))
+                    if requests:
+                        request_path = requests[0]
+                        for line in request_path.read_text(encoding="utf-8").splitlines():
+                            key, value = line.split("=", 1)
+                            captured[key] = value
+                        response_path = response_dir / f"{captured['id']}.response"
+                        response_path.write_text(
+                            f"protocol=2\nid={captured['id']}\nok=1\n",
+                            encoding="utf-8",
+                        )
+                        return
+                    time.sleep(0.005)
+
+            responder = threading.Thread(target=worker)
+            responder.start()
+            self.assertTrue(
+                client.swipe(974, 26, 161, 570, duration_ms=800, end_hold_ms=600)
+            )
+            responder.join(timeout=2)
+
+            self.assertEqual(captured["durationMs"], "800")
+            self.assertEqual(captured["endHoldMs"], "600")
+
+
+if __name__ == "__main__":
+    unittest.main()
