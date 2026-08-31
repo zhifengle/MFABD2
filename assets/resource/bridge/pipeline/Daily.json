@@ -1,0 +1,36 @@
+{
+    "Daily_Busin_SubMenu": {
+        "desc": "[Unity Bridge] 经营子菜单采用互斥状态分流：一键获得为亮色时优先领取，奖励返回后再次判断；只有一键获得明确呈灰色不可用时才允许进入餐馆，避免立刻前往抢先命中而漏领。",
+        "next": [
+            "[Anchor]MainMenu_GoFishing",
+            "[JumpBack]Daily_GetBusin_SubMenu_Claim",
+            "[JumpBack]Daily_GetBusinRewardBack",
+            "Daily_GetBusin_SubMenu_Unavailable_Bridge"
+        ]
+    },
+    "Daily_GetBusin_SubMenu_Unavailable_Bridge": {
+        "desc": "[Unity Bridge] 确认一键获得按钮存在且为灰色不可用后，才放行立刻前往。",
+        "recognition": "And",
+        "all_of": [
+            {
+                "sub_name": "OCR",
+                "recognition": "OCR",
+                "roi": [
+                    660,
+                    505,
+                    180,
+                    60
+                ],
+                "expected": [
+                    "键获得",
+                    "鍵獲得"
+                ]
+            },
+            "Sub_Ocr_Unable_Clr"
+        ],
+        "next": [
+            "Daily_Busin_Enter"
+        ],
+        "focus": "DM.Unity Bridge确认一键获得不可用，进入餐馆"
+    }
+}

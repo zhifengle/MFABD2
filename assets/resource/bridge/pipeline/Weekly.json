@@ -1,0 +1,64 @@
+{
+    "Weekly_LastNight_Move": {
+        "desc": "[Unity Bridge] 识别末日之书场景右上方的红色交战标识，从识别框中心沿角色到标识的方向继续偏移约 52px 后单击，避免固定坐标因出生点或相机偏差导致走偏。候选区避开右上角红点 UI，严格 HSV 红色范围在 2026-08-28 实机 720p 帧中仅命中交战标识（166px，box=[921,185,20,18]，计算点击点=[976,169]）。识别失败时回退原固定坐标。",
+        "recognition": "ColorMatch",
+        "roi": [
+            760,
+            100,
+            300,
+            220
+        ],
+        "method": 40,
+        "lower": [
+            [
+                0,
+                140,
+                120
+            ],
+            [
+                168,
+                140,
+                120
+            ]
+        ],
+        "upper": [
+            [
+                12,
+                255,
+                255
+            ],
+            [
+                180,
+                255,
+                255
+            ]
+        ],
+        "connected": true,
+        "count": 20,
+        "action": "Click",
+        "target_offset": [
+            45,
+            -25,
+            0,
+            0
+        ],
+        "post_delay": 5000,
+        "timeout": 3000,
+        "on_error": ["Weekly_LastNight_Move_Fallback"],
+        "focus": "MM.识别红色战斗标识并向其后方移动。BM.Unity Bridge 动态坐标"
+    },
+    "Weekly_LastNight_Move_Fallback": {
+        "desc": "[Unity Bridge] 红色交战标识未识别时，沿用 base 的固定坐标单击，避免周常流程直接假成功退出。",
+        "recognition": "DirectHit",
+        "action": "Click",
+        "target": [
+            765,
+            316,
+            1,
+            1
+        ],
+        "post_delay": 5000,
+        "next": ["Weekly_LastNight_MenuPage"],
+        "focus": "MM.未识别到战斗标识，回退原固定坐标"
+    }
+}

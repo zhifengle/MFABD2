@@ -44,7 +44,7 @@
         ]
     },
     "Collect_QuickCart_EventPack_OcrCheck": {
-        "desc": "PC:选中态页签文字框仅65x12=780px,base的count 500需64%覆盖率,PC字形上限约48%(实测373/374)恒判负->SelectType自环无界;下调至300(与CharacterPack同lower同值,PC实测406通过),未选中态实测0,分离度充足",
+        "desc": "[PC覆盖·2026-08-20实录] 本节点的字符串 roi 会收缩到前一步活动页签 OCR 命中框，而不是整条页签栏。PC 选中文字实测亮色像素 383，base count=500 恒 miss，导致 SelectType_EventPack 成功后反复自环；未选中时同框为 0。阈值降至 300，保留 83px 正向余量。",
         "count": 300
     },
     "Collect_QuickCart_SelectType_ManagerPack": {

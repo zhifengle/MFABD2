@@ -1,0 +1,273 @@
+{
+  "#Steal_Story01": {
+    "desc": "Story_01（血骑士）每周 NPC 偷窃。入口 Start 出口 MarkDone。键盘'1'进图→返回告示板→找NPC气泡→偷窃→ESC退出→找商店→偷窃→ESC退出→完成。ROI 1280x720。"
+  },
+  "Steal_Story01_Start": {
+    "recognition": "Custom",
+    "custom_recognition": "CheckCoolDown",
+    "custom_recognition_param": {
+      "card_name": "Steal_Story01",
+      "cycle_type": "g_weekly"
+    },
+    "action": "Custom",
+    "custom_action": "PatchPipeline",
+    "custom_action_param": {
+      "patches": {
+        "Steal_Story01_MarkDone": {
+          "action": "Custom",
+          "custom_action": "MarkComplete",
+          "custom_action_param": {
+            "card_name": "Steal_Story01",
+            "cycle_type": "g_weekly"
+          }
+        }
+      }
+    },
+    "next": [
+      "Steal_Story01_EnterMap"
+    ]
+  },
+  "Steal_Story01_EnterMap": {
+    "recognition": "DirectHit",
+    "action": "ClickKey",
+    "key": [
+      49
+    ],
+    "post_delay": 5000,
+    "next": [
+      "[JumpBack]Global_WaitingForLoading",
+      "Steal_Story01_Sandplay",
+      "Steal_Story01_EnterMap"
+    ],
+    "on_error": [
+      "Global_QuickCart_MenuReset",
+      "Global_Null_Exception"
+    ]
+  },
+  "Steal_Story01_Sandplay": {
+    "recognition": "Or",
+    "any_of": [
+      "Rec_SandBox_Pin_Tpl",
+      "Rec_SandBox_Run_Tpl"
+    ],
+    "post_delay": 1000,
+    "next": [
+      "Steal_Story01_ReturnBoard"
+    ],
+    "on_error": [
+      "Global_ToSandBox",
+      "Global_Null_Exception"
+    ]
+  },
+  "Steal_Story01_ReturnBoard": {
+    "recognition": "Or",
+    "any_of": [
+      "Rec_SandBox_Pin_Tpl",
+      "Rec_SandBox_Run_Tpl"
+    ],
+    "anchor": {
+      "ExplorationBoard_Arrived": "Steal_Story01_BoardArrived"
+    },
+    "next": [
+      "Collect_WayPoint_Entry"
+    ],
+    "on_error": [
+      "Global_Null_Exception"
+    ]
+  },
+  "Steal_Story01_BoardArrived": {
+    "recognition": "Or",
+    "any_of": [
+      "Rec_SandBox_Pin_Tpl",
+      "Rec_SandBox_Run_Tpl"
+    ],
+    "post_delay": 1500,
+    "next": [
+      "Steal_Story01_FindNPC"
+    ],
+    "on_error": [
+      "Global_Null_Exception"
+    ]
+  },
+  "Steal_Story01_FindNPC": {
+    "max_hit": 3,
+    "recognition": "TemplateMatch",
+    "roi": [
+      0,
+      80,
+      1280,
+      560
+    ],
+    "template": [
+      "NPC_TalkBubble_PC.png"
+    ],
+    "green_mask": true,
+    "threshold": 0.7,
+    "action": "Click",
+    "target_offset": [
+      0,
+      8
+    ],
+    "post_delay": 3000,
+    "timeout": 8000,
+    "next": [
+      "Steal_Story01_NPC_Panel",
+      "Steal_Story01_FindNPC"
+    ],
+    "on_error": [
+      "Steal_Story01_ReturnBoard",
+      "Global_Null_Exception"
+    ]
+  },
+  "Steal_Story01_NPC_Panel": {
+    "max_hit": 1,
+    "recognition": "OCR",
+    "roi": [
+      40,
+      440,
+      140,
+      55
+    ],
+    "expected": [
+      "天赋技能",
+      "天賦技能"
+    ],
+    "timeout": 5000,
+    "post_delay": 500,
+    "action": "Custom",
+    "custom_action": "PatchPipeline",
+    "custom_action_param": {
+      "patches": {
+        "Steal_Done": {
+          "next": [
+            "Steal_Story01_ExitNPC"
+          ]
+        }
+      }
+    },
+    "next": [
+      "Steal_Enter"
+    ],
+    "on_error": [
+      "Steal_Story01_ExitNPC"
+    ]
+  },
+  "Steal_Story01_ExitNPC": {
+    "recognition": "DirectHit",
+    "action": "ClickKey",
+    "key": [
+      27
+    ],
+    "post_delay": 1500,
+    "next": [
+      "Steal_Story01_ExitNPC_Wait"
+    ]
+  },
+  "Steal_Story01_ExitNPC_Wait": {
+    "recognition": "Or",
+    "any_of": [
+      "Rec_SandBox_Pin_Tpl",
+      "Rec_SandBox_Run_Tpl"
+    ],
+    "post_delay": 1000,
+    "timeout": 4000,
+    "next": [
+      "Steal_Story01_FindShop"
+    ],
+    "on_error": [
+      "Steal_Story01_ExitNPC",
+      "Global_Null_Exception"
+    ]
+  },
+  "Steal_Story01_FindShop": {
+    "max_hit": 3,
+    "recognition": "TemplateMatch",
+    "roi": [
+      0,
+      80,
+      1280,
+      560
+    ],
+    "template": [
+      "Merchant_IcoGE_PC.png",
+      "Merchant_IcoGE.png"
+    ],
+    "green_mask": true,
+    "threshold": 0.7,
+    "action": "Click",
+    "post_delay": 3000,
+    "timeout": 8000,
+    "next": [
+      "Steal_Story01_Shop_Panel",
+      "Steal_Story01_FindShop"
+    ],
+    "on_error": [
+      "Global_Null_Exception"
+    ]
+  },
+  "Steal_Story01_Shop_Panel": {
+    "max_hit": 1,
+    "recognition": "OCR",
+    "roi": [
+      40,
+      440,
+      140,
+      55
+    ],
+    "expected": [
+      "天赋技能",
+      "天賦技能"
+    ],
+    "timeout": 5000,
+    "post_delay": 500,
+    "action": "Custom",
+    "custom_action": "PatchPipeline",
+    "custom_action_param": {
+      "patches": {
+        "Steal_Done": {
+          "next": [
+            "Steal_Story01_ExitShop"
+          ]
+        }
+      }
+    },
+    "next": [
+      "Steal_Enter"
+    ],
+    "on_error": [
+      "Steal_Story01_ExitShop"
+    ]
+  },
+  "Steal_Story01_ExitShop": {
+    "recognition": "DirectHit",
+    "action": "ClickKey",
+    "key": [
+      27
+    ],
+    "post_delay": 1500,
+    "next": [
+      "Steal_Story01_ExitShop_Wait"
+    ]
+  },
+  "Steal_Story01_ExitShop_Wait": {
+    "recognition": "Or",
+    "any_of": [
+      "Rec_SandBox_Pin_Tpl",
+      "Rec_SandBox_Run_Tpl"
+    ],
+    "post_delay": 1000,
+    "timeout": 4000,
+    "next": [
+      "Steal_Story01_MarkDone"
+    ],
+    "on_error": [
+      "Steal_Story01_ExitShop",
+      "Global_Null_Exception"
+    ]
+  },
+  "Steal_Story01_MarkDone": {
+    "recognition": "DirectHit",
+    "action": "DoNothing",
+    "post_delay": 0
+  }
+}

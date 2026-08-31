@@ -1,0 +1,777 @@
+{
+    "Collect_Loc_OutToSwip_Hub_Egress": {
+        "desc": "[Unity Bridge] 三类卡带均可由快捷键直达；到达可视页尾即走原有类别完成出口，不执行幅度不稳定的横向大滑动。",
+        "next": [
+            "[Anchor]SmartSwipOut",
+            "Global_Null"
+        ]
+    },
+    "Collect_StoryPack_IsActive": {
+        "desc": "[Unity Bridge] 仅剧情页签可通过。剧情色核把 NonStoryPackActive 清零；角色/活动色核将其置为非零。",
+        "recognition": "Custom",
+        "custom_recognition": "CheckTag",
+        "custom_recognition_param": {
+            "tag": "NonStoryPackActive",
+            "max": 1
+        }
+    },
+    "Collect_Loc_ClearNonStoryTag": {
+        "action": "Custom",
+        "custom_action": "ResetTag",
+        "custom_action_param": {
+            "tags": [
+                "NonStoryPackActive"
+            ]
+        },
+        "next": [
+            "Collect_FirstBootPack"
+        ]
+    },
+    "Collect_Loc_SetNonStoryTag": {
+        "action": "Custom",
+        "custom_action": "UpdateTag",
+        "custom_action_param": {
+            "tag": "NonStoryPackActive",
+            "value": 1
+        },
+        "next": [
+            "Collect_FirstBootPack"
+        ]
+    },
+    "Collect_Pack_Story_1": {
+        "recognition": "And",
+        "all_of": [
+            "Collect_StoryPack_IsActive",
+            {
+                "recognition": "Custom",
+                "custom_recognition": "CheckCoolDown",
+                "custom_recognition_param": {
+                    "card_name": "Story_01_血骑士",
+                    "cycle_type": "g_weekly"
+                }
+            }
+        ],
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_1"
+        ]
+    },
+    "Collect_Pack_Story_2": {
+        "recognition": "And",
+        "all_of": [
+            "Collect_StoryPack_IsActive",
+            {
+                "recognition": "Custom",
+                "custom_recognition": "CheckCoolDown",
+                "custom_recognition_param": {
+                    "card_name": "Story_02_苍蓝魔女",
+                    "cycle_type": "g_weekly"
+                }
+            }
+        ],
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_2"
+        ]
+    },
+    "Collect_Pack_Story_3": {
+        "recognition": "And",
+        "all_of": [
+            "Collect_StoryPack_IsActive",
+            {
+                "recognition": "Custom",
+                "custom_recognition": "CheckCoolDown",
+                "custom_recognition_param": {
+                    "card_name": "Story_03_迷雾神射手",
+                    "cycle_type": "g_weekly"
+                }
+            }
+        ],
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_3"
+        ]
+    },
+    "Collect_Pack_Story_4": {
+        "recognition": "And",
+        "all_of": [
+            "Collect_StoryPack_IsActive",
+            {
+                "recognition": "Custom",
+                "custom_recognition": "CheckCoolDown",
+                "custom_recognition_param": {
+                    "card_name": "Story_04_眼镜与猫",
+                    "cycle_type": "g_weekly"
+                }
+            }
+        ],
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_4"
+        ]
+    },
+    "Collect_Pack_Story_5": {
+        "recognition": "And",
+        "all_of": [
+            "Collect_StoryPack_IsActive",
+            {
+                "recognition": "Custom",
+                "custom_recognition": "CheckCoolDown",
+                "custom_recognition_param": {
+                    "card_name": "Story_05_沙漠之花",
+                    "cycle_type": "g_weekly"
+                }
+            }
+        ],
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_5"
+        ]
+    },
+    "Collect_Pack_Story_6": {
+        "recognition": "And",
+        "all_of": [
+            "Collect_StoryPack_IsActive",
+            {
+                "recognition": "Custom",
+                "custom_recognition": "CheckCoolDown",
+                "custom_recognition_param": {
+                    "card_name": "Story_06_异教塔",
+                    "cycle_type": "g_weekly"
+                }
+            }
+        ],
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_6"
+        ]
+    },
+    "Collect_Pack_Story_7": {
+        "recognition": "And",
+        "all_of": [
+            "Collect_StoryPack_IsActive",
+            {
+                "recognition": "Custom",
+                "custom_recognition": "CheckCoolDown",
+                "custom_recognition_param": {
+                    "card_name": "Story_07_愤怒天使",
+                    "cycle_type": "g_weekly"
+                }
+            }
+        ],
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_7"
+        ]
+    },
+    "Collect_Pack_Story_8": {
+        "recognition": "And",
+        "all_of": [
+            "Collect_StoryPack_IsActive",
+            {
+                "recognition": "Custom",
+                "custom_recognition": "CheckCoolDown",
+                "custom_recognition_param": {
+                    "card_name": "Story_08_血之狂想曲",
+                    "cycle_type": "g_weekly"
+                }
+            }
+        ],
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_8"
+        ]
+    },
+    "Collect_Pack_Story_9": {
+        "recognition": "And",
+        "all_of": [
+            "Collect_StoryPack_IsActive",
+            {
+                "recognition": "Custom",
+                "custom_recognition": "CheckCoolDown",
+                "custom_recognition_param": {
+                    "card_name": "Story_09_铁假面",
+                    "cycle_type": "g_weekly"
+                }
+            }
+        ],
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_Story_9"
+        ]
+    },
+    "Collect_Pack_Story_10": {
+        "recognition": "And",
+        "all_of": [
+            "Collect_StoryPack_IsActive",
+            {
+                "recognition": "Custom",
+                "custom_recognition": "CheckCoolDown",
+                "custom_recognition_param": {
+                    "card_name": "Story_10_霍尔蒙克斯",
+                    "cycle_type": "g_weekly"
+                }
+            }
+        ],
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_Story_10"
+        ]
+    },
+    "Collect_Pack_Story_11": {
+        "recognition": "And",
+        "all_of": [
+            "Collect_StoryPack_IsActive",
+            {
+                "recognition": "Custom",
+                "custom_recognition": "CheckCoolDown",
+                "custom_recognition_param": {
+                    "card_name": "Story_11_虚假游戏",
+                    "cycle_type": "g_weekly"
+                }
+            }
+        ],
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_Story_11"
+        ]
+    },
+    "Collect_Pack_Story_12": {
+        "recognition": "And",
+        "all_of": [
+            "Collect_StoryPack_IsActive",
+            {
+                "recognition": "Custom",
+                "custom_recognition": "CheckCoolDown",
+                "custom_recognition_param": {
+                    "card_name": "Story_12_黑羽毛",
+                    "cycle_type": "g_weekly"
+                }
+            }
+        ],
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_Story_12"
+        ]
+    },
+    "Collect_Pack_Story_13": {
+        "recognition": "And",
+        "all_of": [
+            "Collect_StoryPack_IsActive",
+            {
+                "recognition": "Custom",
+                "custom_recognition": "CheckCoolDown",
+                "custom_recognition_param": {
+                    "card_name": "Story_13_雪之歌",
+                    "cycle_type": "g_weekly"
+                }
+            }
+        ],
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_Story_13"
+        ]
+    },
+    "Collect_Pack_Story_14": {
+        "recognition": "And",
+        "all_of": [
+            "Collect_StoryPack_IsActive",
+            {
+                "recognition": "Custom",
+                "custom_recognition": "CheckCoolDown",
+                "custom_recognition_param": {
+                    "card_name": "Story_14_神圣审判",
+                    "cycle_type": "g_weekly"
+                }
+            }
+        ],
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_Story_14"
+        ]
+    },
+    "Collect_Pack_Story_15": {
+        "recognition": "And",
+        "all_of": [
+            "Collect_StoryPack_IsActive",
+            {
+                "recognition": "Custom",
+                "custom_recognition": "CheckCoolDown",
+                "custom_recognition_param": {
+                    "card_name": "Story_15_复仇的誓言",
+                    "cycle_type": "g_weekly"
+                }
+            }
+        ],
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_Story_15"
+        ]
+    },
+    "Collect_Pack_Story_16": {
+        "recognition": "And",
+        "all_of": [
+            "Collect_StoryPack_IsActive",
+            {
+                "recognition": "Custom",
+                "custom_recognition": "CheckCoolDown",
+                "custom_recognition_param": {
+                    "card_name": "Story_16_三国同盟",
+                    "cycle_type": "g_weekly"
+                }
+            }
+        ],
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_Story_16"
+        ]
+    },
+    "Collect_Pack_Story_17": {
+        "recognition": "And",
+        "all_of": [
+            "Collect_StoryPack_IsActive",
+            {
+                "recognition": "Custom",
+                "custom_recognition": "CheckCoolDown",
+                "custom_recognition_param": {
+                    "card_name": "Story_17_试炼之路",
+                    "cycle_type": "g_weekly"
+                }
+            }
+        ],
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_Story_17"
+        ]
+    },
+    "Collect_Pack_Story_18": {
+        "recognition": "And",
+        "all_of": [
+            "Collect_StoryPack_IsActive",
+            {
+                "recognition": "Custom",
+                "custom_recognition": "CheckCoolDown",
+                "custom_recognition_param": {
+                    "card_name": "Story_18_救赎",
+                    "cycle_type": "g_weekly"
+                }
+            }
+        ],
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_Story_18"
+        ]
+    },
+    "Collect_Pack_Story_19": {
+        "recognition": "And",
+        "all_of": [
+            "Collect_StoryPack_IsActive",
+            {
+                "recognition": "Custom",
+                "custom_recognition": "CheckCoolDown",
+                "custom_recognition_param": {
+                    "card_name": "Story_19_被遗忘的战争",
+                    "cycle_type": "g_weekly"
+                }
+            }
+        ],
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_Story_19"
+        ]
+    },
+    "Collect_Pack_Story_20": {
+        "desc": "[Unity Bridge] 剧情卡带 20 没有采集内容，保持与 base 一致禁用。",
+        "enabled": false
+    },
+    "Collect_Pack_Character_1": {
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_1"
+        ]
+    },
+    "Collect_Pack_Character_2": {
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_2"
+        ]
+    },
+    "Collect_Pack_Character_3": {
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_3"
+        ]
+    },
+    "Collect_Pack_Character_4": {
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_4"
+        ]
+    },
+    "Collect_Pack_Character_5": {
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_5"
+        ]
+    },
+    "Collect_Pack_Character_6": {
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_6"
+        ]
+    },
+    "Collect_Pack_Character_7": {
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_7"
+        ]
+    },
+    "Collect_Pack_Character_8": {
+        "desc": "[Unity Bridge] 角色卡带仅 1-7 有采集内容；角色 8 保持与 base 一致禁用。",
+        "enabled": false
+    },
+    "Collect_Pack_Event_1": {
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_Event_1"
+        ]
+    },
+    "Collect_Pack_Event_2": {
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_Event_2"
+        ]
+    },
+    "Collect_Pack_Event_3": {
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_Event_3"
+        ]
+    },
+    "Collect_Pack_Event_4": {
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_Event_4"
+        ]
+    },
+    "Collect_Pack_Event_5": {
+        "post_delay": 0,
+        "next": [
+            "Collect_Pack_KeyClick_Event_5"
+        ]
+    },
+    "Collect_Pack_KeyClick_Story_9": {
+        "desc": "[Unity Bridge] 剧情卡带 9：主键盘 9。",
+        "action": "ClickKey",
+        "key": [
+            57
+        ],
+        "post_delay": 5000,
+        "next": [
+            "[JumpBack]Global_WaitingForLoading",
+            "Collect_OperationsMain_Sandplay",
+            "Collect_Pack_KeyClick_Story_9"
+        ]
+    },
+    "Collect_Pack_KeyClick_Story_10": {
+        "desc": "[Unity Bridge] 剧情卡带 10：主键盘 0。",
+        "action": "ClickKey",
+        "key": [
+            48
+        ],
+        "post_delay": 5000,
+        "next": [
+            "[JumpBack]Global_WaitingForLoading",
+            "Collect_OperationsMain_Sandplay",
+            "Collect_Pack_KeyClick_Story_10"
+        ]
+    },
+    "Collect_Pack_KeyClick_Story_11": {
+        "desc": "[Unity Bridge] 剧情卡带 11：F1。",
+        "action": "ClickKey",
+        "key": [
+            112
+        ],
+        "post_delay": 5000,
+        "next": [
+            "[JumpBack]Global_WaitingForLoading",
+            "Collect_OperationsMain_Sandplay",
+            "Collect_Pack_KeyClick_Story_11"
+        ]
+    },
+    "Collect_Pack_KeyClick_Story_12": {
+        "desc": "[Unity Bridge] 剧情卡带 12：F2。",
+        "action": "ClickKey",
+        "key": [
+            113
+        ],
+        "post_delay": 5000,
+        "next": [
+            "[JumpBack]Global_WaitingForLoading",
+            "Collect_OperationsMain_Sandplay",
+            "Collect_Pack_KeyClick_Story_12"
+        ]
+    },
+    "Collect_Pack_KeyClick_Story_13": {
+        "desc": "[Unity Bridge] 剧情卡带 13：F3。",
+        "action": "ClickKey",
+        "key": [
+            114
+        ],
+        "post_delay": 5000,
+        "next": [
+            "[JumpBack]Global_WaitingForLoading",
+            "Collect_OperationsMain_Sandplay",
+            "Collect_Pack_KeyClick_Story_13"
+        ]
+    },
+    "Collect_Pack_KeyClick_Story_14": {
+        "desc": "[Unity Bridge] 剧情卡带 14：F4。",
+        "action": "ClickKey",
+        "key": [
+            115
+        ],
+        "post_delay": 5000,
+        "next": [
+            "[JumpBack]Global_WaitingForLoading",
+            "Collect_OperationsMain_Sandplay",
+            "Collect_Pack_KeyClick_Story_14"
+        ]
+    },
+    "Collect_Pack_KeyClick_Story_15": {
+        "desc": "[Unity Bridge] 剧情卡带 15：F5。",
+        "action": "ClickKey",
+        "key": [
+            116
+        ],
+        "post_delay": 5000,
+        "next": [
+            "[JumpBack]Global_WaitingForLoading",
+            "Collect_OperationsMain_Sandplay",
+            "Collect_Pack_KeyClick_Story_15"
+        ]
+    },
+    "Collect_Pack_KeyClick_Story_16": {
+        "desc": "[Unity Bridge] 剧情卡带 16：F6。",
+        "action": "ClickKey",
+        "key": [
+            117
+        ],
+        "post_delay": 5000,
+        "next": [
+            "[JumpBack]Global_WaitingForLoading",
+            "Collect_OperationsMain_Sandplay",
+            "Collect_Pack_KeyClick_Story_16"
+        ]
+    },
+    "Collect_Pack_KeyClick_Story_17": {
+        "desc": "[Unity Bridge] 剧情卡带 17：F7。",
+        "action": "ClickKey",
+        "key": [
+            118
+        ],
+        "post_delay": 5000,
+        "next": [
+            "[JumpBack]Global_WaitingForLoading",
+            "Collect_OperationsMain_Sandplay",
+            "Collect_Pack_KeyClick_Story_17"
+        ]
+    },
+    "Collect_Pack_KeyClick_Story_18": {
+        "desc": "[Unity Bridge] 剧情卡带 18：F8。",
+        "action": "ClickKey",
+        "key": [
+            119
+        ],
+        "post_delay": 5000,
+        "next": [
+            "[JumpBack]Global_WaitingForLoading",
+            "Collect_OperationsMain_Sandplay",
+            "Collect_Pack_KeyClick_Story_18"
+        ]
+    },
+    "Collect_Pack_KeyClick_Story_19": {
+        "desc": "[Unity Bridge] 剧情卡带 19：F9。",
+        "action": "ClickKey",
+        "key": [
+            120
+        ],
+        "post_delay": 5000,
+        "next": [
+            "[JumpBack]Global_WaitingForLoading",
+            "Collect_OperationsMain_Sandplay",
+            "Collect_Pack_KeyClick_Story_19"
+        ]
+    },
+    "Collect_Pack_KeyClick_1": {
+        "action": "ClickKey",
+        "key": [
+            49
+        ],
+        "post_delay": 5000,
+        "next": [
+            "[JumpBack]Global_WaitingForLoading",
+            "Collect_OperationsMain_Sandplay",
+            "Collect_Pack_KeyClick_1"
+        ]
+    },
+    "Collect_Pack_KeyClick_2": {
+        "action": "ClickKey",
+        "key": [
+            50
+        ],
+        "post_delay": 5000,
+        "next": [
+            "[JumpBack]Global_WaitingForLoading",
+            "Collect_OperationsMain_Sandplay",
+            "Collect_Pack_KeyClick_2"
+        ]
+    },
+    "Collect_Pack_KeyClick_3": {
+        "action": "ClickKey",
+        "key": [
+            51
+        ],
+        "post_delay": 5000,
+        "next": [
+            "[JumpBack]Global_WaitingForLoading",
+            "Collect_OperationsMain_Sandplay",
+            "Collect_Pack_KeyClick_3"
+        ]
+    },
+    "Collect_Pack_KeyClick_4": {
+        "action": "ClickKey",
+        "key": [
+            52
+        ],
+        "post_delay": 5000,
+        "next": [
+            "[JumpBack]Global_WaitingForLoading",
+            "Collect_OperationsMain_Sandplay",
+            "Collect_Pack_KeyClick_4"
+        ]
+    },
+    "Collect_Pack_KeyClick_5": {
+        "action": "ClickKey",
+        "key": [
+            53
+        ],
+        "post_delay": 5000,
+        "next": [
+            "[JumpBack]Global_WaitingForLoading",
+            "Collect_OperationsMain_Sandplay",
+            "Collect_Pack_KeyClick_5"
+        ]
+    },
+    "Collect_Pack_KeyClick_6": {
+        "action": "ClickKey",
+        "key": [
+            54
+        ],
+        "post_delay": 5000,
+        "next": [
+            "[JumpBack]Global_WaitingForLoading",
+            "Collect_OperationsMain_Sandplay",
+            "Collect_Pack_KeyClick_6"
+        ]
+    },
+    "Collect_Pack_KeyClick_7": {
+        "action": "ClickKey",
+        "key": [
+            55
+        ],
+        "post_delay": 5000,
+        "next": [
+            "[JumpBack]Global_WaitingForLoading",
+            "Collect_OperationsMain_Sandplay",
+            "Collect_Pack_KeyClick_7"
+        ]
+    },
+    "Collect_Pack_KeyClick_8": {
+        "action": "ClickKey",
+        "key": [
+            56
+        ],
+        "post_delay": 5000,
+        "next": [
+            "[JumpBack]Global_WaitingForLoading",
+            "Collect_OperationsMain_Sandplay",
+            "Collect_Pack_KeyClick_8"
+        ]
+    },
+    "Collect_Pack_KeyClick_Event_1": {
+        "action": "ClickKey",
+        "key": [
+            49
+        ],
+        "post_delay": 5000,
+        "next": [
+            "[JumpBack]Global_WaitingForLoading",
+            "Collect_OperationsMain_Sandplay",
+            "Collect_Pack_KeyClick_Event_1"
+        ]
+    },
+    "Collect_Pack_KeyClick_Event_2": {
+        "action": "ClickKey",
+        "key": [
+            50
+        ],
+        "post_delay": 5000,
+        "next": [
+            "[JumpBack]Global_WaitingForLoading",
+            "Collect_OperationsMain_Sandplay",
+            "Collect_Pack_KeyClick_Event_2"
+        ]
+    },
+    "Collect_Pack_KeyClick_Event_3": {
+        "action": "ClickKey",
+        "key": [
+            51
+        ],
+        "post_delay": 5000,
+        "next": [
+            "[JumpBack]Global_WaitingForLoading",
+            "Collect_OperationsMain_Sandplay",
+            "Collect_Pack_KeyClick_Event_3"
+        ]
+    },
+    "Collect_Pack_KeyClick_Event_4": {
+        "action": "ClickKey",
+        "key": [
+            52
+        ],
+        "post_delay": 5000,
+        "next": [
+            "[JumpBack]Global_WaitingForLoading",
+            "Collect_OperationsMain_Sandplay",
+            "Collect_Pack_KeyClick_Event_4"
+        ]
+    },
+    "Collect_Pack_KeyClick_Event_5": {
+        "action": "ClickKey",
+        "key": [
+            53
+        ],
+        "post_delay": 5000,
+        "next": [
+            "[JumpBack]Global_WaitingForLoading",
+            "Collect_OperationsMain_Sandplay",
+            "Collect_Pack_KeyClick_Event_5"
+        ]
+    },
+    "Collect_QuickCart_StoryPack_OcrCheck": {
+        "next": [
+            "Collect_Loc_ClearNonStoryTag"
+        ]
+    },
+    "Collect_QuickCart_CharacterPack_OcrCheck": {
+        "next": [
+            "Collect_Loc_SetNonStoryTag"
+        ]
+    },
+    "Collect_QuickCart_EventPack_OcrCheck": {
+        "next": [
+            "Collect_Loc_SetNonStoryTag"
+        ]
+    }
+}

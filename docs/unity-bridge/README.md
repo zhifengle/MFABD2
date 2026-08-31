@@ -20,9 +20,10 @@ uv run python -m unittest discover -v
 | 选择工作分支、同步上游、提升或拆分提交 | [分支管理](branch-management.md) |
 | 运行单任务、维护 TOML、检查批处理或 Ctrl+C | [运行与配置](runtime-and-config.md) |
 | 检查最终 node、设计最小复现、分析日志 | [测试与排障](testing-and-debugging.md) |
+| 修改地图采集、卡带选择、快捷键或屏蔽规则 | [卡带采集](card-collection.md) |
 | 修改控制器、资源加载方式或 pipeline 架构 | [架构与设计决策](architecture-and-decisions.md) |
 
-特有功能分支还会增加对应的业务文档，例如卡带采集说明；这些文档不放入核心框架分支。
+本分支包含 Unity Bridge 特有功能，因此索引同时列出对应的业务文档；这些文档不放入核心框架分支。
 
 ## 能力与边界
 
@@ -49,6 +50,15 @@ MaaFramework 核心支持在同一进程中创建 Custom Controller，但当前 
 | `scripts/unity_bridge_node_lab.py` | 查看或实机执行最终合并 node |
 | `tests/test_unity_bridge_config.py` | 配置、资源顺序和 Ctrl+C 回归 |
 | `tests/test_unity_bridge_client.py` | Bridge 文件协议、超时和失败诊断回归 |
+
+特有功能层增加以下入口：
+
+| 路径 | 职责 |
+| --- | --- |
+| `assets/interface.json` | 正式任务、选项和 preset；批处理任务必须在这里登记 |
+| `assets/resource/bridge` | Unity Bridge 专用 pipeline 覆盖 |
+| `tests/test_unity_bridge_pipeline.py` | 卡带快捷键、范围和剧情入口的离线契约 |
+| `tests/test_steal_avail.py` | 偷窃卡片检测、冷却过滤和混合砍价卡跳过逻辑 |
 
 ## 不变量
 

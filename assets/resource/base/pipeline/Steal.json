@@ -1,0 +1,88 @@
+{
+    "#偷窃操作链": {
+        "desc": "按周 NPC 偷窃操作。入口 Steal_Enter 假设已导航到 NPC 且天赋技能面板可见。出口 Steal_Done。不包含导航逻辑（后续 Collect_IM_OnFoot_* 复用）。ROI 坐标为 1280x720（PC 实测校准）。"
+    },
+
+    "_Steal_Panel_Scan": {
+        "desc": "OCR辅助节点:扫描天赋技能面板全部文字,供 FindAvailableSteal 自定义识别器调用。only_rec=true 不执行动作。ROI 覆盖面板标签→头像区→技能名行→等级行。",
+        "recognition": "OCR",
+        "roi": [40, 440, 920, 220],
+        "only_rec": true
+    },
+
+    "Steal_Enter": {
+        "desc": "确认进入 NPC 交互态:天赋技能面板可见。入口节点,假设已导航到位。失败=面板不可见,由调用方处理。",
+        "recognition": "OCR",
+        "roi": [40, 440, 140, 55],
+        "expected": ["天赋技能", "天賦技能"],
+        "action": "DoNothing",
+        "post_delay": 500,
+        "next": [
+            "Steal_AvailCheck",
+            "Steal_Done"
+        ]
+    },
+
+    "Steal_AvailCheck": {
+        "desc": "自定义识别:找第一个可用(非冷却)的偷窃角色并点击其技能卡。FindAvailableSteal 先检测连续角色卡，再逐卡放大OCR技能名；'砍价/討價還價'明确跳过，冷却遮罩导致的不可读卡视为冷却，可用偷窃卡至少命中'偷'或'窃'。没有可用偷窃→识别失败→父节点走 Steal_Done。",
+        "recognition": "Custom",
+        "custom_recognition": "FindAvailableSteal",
+        "custom_recognition_param": {},
+        "rate_limit": 1000,
+        "pre_delay": 0,
+        "timeout": 1500,
+        "action": "Click",
+        "post_delay": 1000,
+        "next": [
+            "Steal_ConfirmDlg",
+            "Steal_Enter"
+        ]
+    },
+
+    "Steal_ConfirmDlg": {
+        "desc": "偷窃确认弹窗:检测标题中的'持有物列表'。弹窗居中,ROI覆盖标题区域。",
+        "recognition": "OCR",
+        "roi": [500, 240, 300, 50],
+        "expected": ["持有物列表"],
+        "action": "DoNothing",
+        "post_delay": 500,
+        "next": [
+            "Steal_ConfirmBtn"
+        ]
+    },
+
+    "Steal_ConfirmBtn": {
+        "desc": "点击确认弹窗的'偷窃'按钮(右下,带蓝钻图标和数字5)。ROI覆盖按钮区域。点击后等偷窃动画播放。",
+        "recognition": "OCR",
+        "roi": [600, 425, 205, 60],
+        "expected": ["偷窃"],
+        "action": "Click",
+        "rate_limit": 500,
+        "timeout": 12000,
+        "post_delay": 3000,
+        "next": [
+            "Steal_AnimEnd"
+        ]
+    },
+
+    "Steal_AnimEnd": {
+        "desc": "等待偷窃动画结束:天赋技能面板重新可见。动画期间面板可能不可见,timeout给足等待时间。命中后回到 AvailCheck 偷下一个角色。",
+        "recognition": "OCR",
+        "roi": [40, 440, 140, 55],
+        "expected": ["天赋技能", "天賦技能"],
+        "action": "DoNothing",
+        "timeout": 10000,
+        "post_delay": 500,
+        "next": [
+            "Steal_AvailCheck",
+            "Steal_Done"
+        ]
+    },
+
+    "Steal_Done": {
+        "desc": "偷窃操作结束。全部角色冷却中或已完成。DirectHit保证命中,无next=退栈返回调用方。",
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "post_delay": 0
+    }
+}

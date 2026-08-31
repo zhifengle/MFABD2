@@ -151,8 +151,10 @@
         ]
     },
     "Daily_Busin_Hub": {
+        "desc": "优先直接识别主页的经营管理入口；主页状态识别仅作为导航兜底",
         "max_hit": 1,
         "next": [
+            "Daily_Busin_Claim",
             "Daily_Busin_Hub_Post",
             "[JumpBack]Global_ToHomePage"
         ]
