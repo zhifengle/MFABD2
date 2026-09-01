@@ -20,7 +20,8 @@ PI V2 interface.json 不支持 "type": "Custom"，MFAAvalonia GUI 无法声明�
         [task]
         name = "[执行]快速狩猎扫荡"
         account_id = "0"
-        timeout = 1200.0
+        timeout = 600.0
+        stall_timeout = 180.0
 
         [[task.options]]
         name = "选项名"
@@ -38,12 +39,14 @@ PI V2 interface.json 不支持 "type": "Custom"，MFAAvalonia GUI 无法声明�
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import json
 import math
 import os
 import sys
 import threading
 import time
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -253,7 +256,38 @@ def _apply_single_config(
     )
     args.timeout = args.timeout if args.timeout is not None else config.timeout
     if args.timeout is None:
-        args.timeout = 1200.0
+        args.timeout = 600.0
+    args.stall_timeout = (
+        args.stall_timeout
+        if args.stall_timeout is not None
+        else config.stall_timeout
+    )
+    if args.stall_timeout is None:
+        args.stall_timeout = 180.0
+    args.progress_node = (
+        args.progress_node
+        if args.progress_node is not None
+        else list(config.progress_nodes)
+    )
+    args.loop_exempt_node = (
+        args.loop_exempt_node
+        if args.loop_exempt_node is not None
+        else list(config.loop_exempt_nodes)
+    )
+    cli_recovery_entry = args.recovery_entry
+    args.recovery_entry = (
+        args.recovery_entry
+        if args.recovery_entry is not None
+        else config.recovery_entry
+    )
+    if args.recovery_retries is None:
+        args.recovery_retries = (
+            1
+            if cli_recovery_entry is not None and config.recovery_entry is None
+            else config.recovery_retries
+        )
+    if args.recovery_retries > 0 and not args.recovery_entry:
+        raise ValueError("recovery_retries 大于 0 时必须配置 recovery_entry")
     args.option = args.option if args.option is not None else list(config.options)
     args.click = args.click if args.click is not None else config.click
     args.after_click = (
@@ -276,6 +310,16 @@ def _non_negative_float(value: str) -> float:
         raise argparse.ArgumentTypeError("必须是数字") from error
     if not math.isfinite(result) or result < 0:
         raise argparse.ArgumentTypeError("必须是非负有限数")
+    return result
+
+
+def _non_negative_int(value: str) -> int:
+    try:
+        result = int(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError("必须是整数") from error
+    if result < 0:
+        raise argparse.ArgumentTypeError("必须是非负整数")
     return result
 
 
@@ -304,24 +348,147 @@ def _ensure_ocr_models(resource_root: str) -> None:
     )
 
 
+@dataclass(frozen=True)
+class _ProgressSnapshot:
+    last_node: str
+    phase: str
+    last_event: str
+    last_activity_time: float
+    phase_started_time: float
+    phase_active: bool
+    repeated_transition_since: float | None
+    repeated_transition: tuple[str, str] | None
+
+
 class _ProgressSink:
-    """线程安全地输出关键 MaaFramework 节点事件。"""
+    """输出节点事件，并维护当前 MaaFramework task 的 watchdog 状态。"""
+
+    _ACTIVITY_PREFIXES = (
+        "Node.PipelineNode.",
+        "Node.Recognition.",
+        "Node.RecognitionNode.",
+        "Node.Action.",
+        "Node.ActionNode.",
+        "Node.WaitFreezes.",
+        "Node.NextList.",
+    )
 
     def __init__(self) -> None:
         self._lock = threading.Lock()
+        self._task_id: int | None = None
+        self._event_task_id: int | None = None
         self.last_node = ""
+        self.phase = "waiting"
+        self.last_event = ""
+        self.last_activity_time = time.monotonic()
+        self.phase_started_time = self.last_activity_time
+        self.phase_active = False
+        self.repeated_transition_since: float | None = None
+        self.repeated_transition: tuple[str, str] | None = None
+        self._previous_node = ""
+        self._seen_transitions: set[tuple[str, str]] = set()
+        self._progress_node_patterns: tuple[str, ...] = ()
+        self._loop_exempt_node_patterns: tuple[str, ...] = ()
+
+    def prepare_task(
+        self,
+        started_at: float,
+        progress_node_patterns: tuple[str, ...] = (),
+        loop_exempt_node_patterns: tuple[str, ...] = (),
+    ) -> None:
+        """Reset state before posting, while temporarily accepting the new task id."""
+        with self._lock:
+            self._task_id = None
+            self._event_task_id = None
+            self.last_node = ""
+            self.phase = "starting"
+            self.last_event = "Tasker.Task.Starting"
+            self.last_activity_time = started_at
+            self.phase_started_time = started_at
+            self.phase_active = False
+            self.repeated_transition_since = None
+            self.repeated_transition = None
+            self._previous_node = ""
+            self._seen_transitions.clear()
+            self._progress_node_patterns = progress_node_patterns
+            self._loop_exempt_node_patterns = loop_exempt_node_patterns
+
+    def begin_task(self, task_id: int, started_at: float) -> None:
+        """Bind events to the posted task without losing synchronous start events."""
+        with self._lock:
+            self._task_id = task_id
+            if self._event_task_id != task_id:
+                self.last_node = ""
+                self.phase = "starting"
+                self.last_event = "Tasker.Task.Starting"
+                self.last_activity_time = started_at
+                self.phase_started_time = started_at
+                self.phase_active = False
+
+    def snapshot(self) -> _ProgressSnapshot:
+        with self._lock:
+            return _ProgressSnapshot(
+                last_node=self.last_node,
+                phase=self.phase,
+                last_event=self.last_event,
+                last_activity_time=self.last_activity_time,
+                phase_started_time=self.phase_started_time,
+                phase_active=self.phase_active,
+                repeated_transition_since=self.repeated_transition_since,
+                repeated_transition=self.repeated_transition,
+            )
+
+    @staticmethod
+    def _matches(name: str, patterns: tuple[str, ...]) -> bool:
+        return any(fnmatch.fnmatchcase(name, pattern) for pattern in patterns)
+
+    def _record_transition(self, name: str, now: float) -> None:
+        edge = (self._previous_node, name)
+        is_checkpoint = self._matches(name, self._progress_node_patterns)
+        is_exempt = self._matches(name, self._loop_exempt_node_patterns)
+        if is_checkpoint or is_exempt:
+            self._seen_transitions.clear()
+            self.repeated_transition_since = None
+            self.repeated_transition = None
+        elif edge not in self._seen_transitions:
+            self._seen_transitions.add(edge)
+            self.repeated_transition_since = None
+            self.repeated_transition = None
+        elif self.repeated_transition_since is None:
+            self.repeated_transition_since = now
+            self.repeated_transition = edge
+        self._previous_node = name
 
     def emit(self, message: str, details: dict[str, Any]) -> None:
-        if not message.startswith(
-            ("Node.PipelineNode.", "Node.Action.", "Node.WaitFreezes.")
-        ):
+        if not message.startswith(self._ACTIVITY_PREFIXES):
             return
 
         name = str(details.get("name", "?"))
         state = message.rsplit(".", 1)[-1]
         with self._lock:
+            event_task_id = details.get("task_id")
+            if self._task_id is not None and event_task_id != self._task_id:
+                return
+            self._event_task_id = event_task_id
+            now = time.monotonic()
             if message.startswith("Node.PipelineNode."):
                 self.last_node = name
+                if state == "Starting":
+                    self._record_transition(name, now)
+                    self.phase = "PipelineNode"
+                    self.phase_started_time = now
+                    self.phase_active = True
+                else:
+                    self.phase_active = False
+            elif message.startswith("Node.NextList."):
+                self.phase = "NextList"
+                self.phase_started_time = now
+                self.phase_active = state == "Starting"
+            elif not self.phase_active:
+                self.phase = message.split(".", 2)[1]
+                self.phase_started_time = now
+            self.last_event = message
+            self.last_activity_time = now
             suffix = f" focus={details.get('focus')}" if details.get("focus") else ""
             mfaalog.info(f"[节点] {name}: {state}{suffix}")
 
@@ -341,23 +508,31 @@ def _attach_progress_sink(tasker: Any) -> _ProgressSink:
     return progress
 
 
-def _stop_task(tasker: Any, grace_seconds: float = 5.0) -> None:
+def _stop_task(tasker: Any, grace_seconds: float = 5.0) -> bool:
     """请求停止任务，避免再次进入无期限 wait。"""
     try:
         stop_job = tasker.post_stop()
     except Exception as error:
         mfaalog.error(f"提交停止请求失败: {error}")
-        return
+        return False
 
     deadline = time.monotonic() + grace_seconds
     try:
         while not stop_job.done and time.monotonic() < deadline:
             time.sleep(0.05)
+        stopped = stop_job.done and stop_job.succeeded
     except KeyboardInterrupt:
         mfaalog.warning("再次收到 Ctrl+C，不再等待停止请求完成")
-        return
-    if not stop_job.done:
-        mfaalog.warning("停止请求在 5 秒内未完成，进程将直接退出")
+        return False
+    except Exception as error:
+        mfaalog.error(f"等待停止请求时失败: {error}")
+        return False
+    if not stopped:
+        mfaalog.warning(
+            f"停止请求在 {grace_seconds:g} 秒内未完成，进程将直接退出"
+        )
+        return False
+    return True
 
 
 def _run_task_with_timeout(
@@ -365,21 +540,106 @@ def _run_task_with_timeout(
     entry: str,
     pipeline_override: dict[str, Any],
     timeout_seconds: float,
+    stall_timeout_seconds: float = 180.0,
     progress: _ProgressSink | None = None,
+    progress_node_patterns: tuple[str, ...] = (),
+    loop_exempt_node_patterns: tuple[str, ...] = (),
 ) -> int:
     progress = progress or _attach_progress_sink(tasker)
     started = time.monotonic()
+    watchdog_warning: tuple[str, float] | None = None
+    pending_limit = min(30.0, stall_timeout_seconds)
+    grace_seconds = min(15.0, max(1.0, stall_timeout_seconds * 0.1))
 
     try:
+        progress.prepare_task(
+            started,
+            progress_node_patterns,
+            loop_exempt_node_patterns,
+        )
         task_job = tasker.post_task(entry, pipeline_override=pipeline_override)
+        progress.begin_task(task_job.job_id, started)
         while not task_job.done:
-            if timeout_seconds > 0 and time.monotonic() - started >= timeout_seconds:
+            now = time.monotonic()
+            snapshot = progress.snapshot()
+            if timeout_seconds > 0 and now - started >= timeout_seconds:
+                if task_job.done:
+                    break
                 mfaalog.error(
                     f"任务超时（{timeout_seconds:g} 秒），最后节点: "
-                    f"{progress.last_node or '尚未进入节点'}"
+                    f"{snapshot.last_node or '尚未进入节点'}"
                 )
-                _stop_task(tasker)
-                return 124
+                return 124 if _stop_task(tasker) else 125
+
+            pending_for = now - started
+            phase_for = now - snapshot.phase_started_time
+            cycle_for = (
+                now - snapshot.repeated_transition_since
+                if snapshot.repeated_transition_since is not None
+                else 0.0
+            )
+            idle_for = now - snapshot.last_activity_time
+            violation: tuple[str, int, float, str] | None = None
+            if (
+                stall_timeout_seconds > 0
+                and getattr(task_job, "pending", False)
+                and pending_for >= pending_limit
+            ):
+                violation = ("pending", 126, pending_for, "任务一直处于 Pending")
+            elif (
+                stall_timeout_seconds > 0
+                and snapshot.repeated_transition_since is not None
+                and cycle_for >= stall_timeout_seconds
+            ):
+                edge = snapshot.repeated_transition or ("?", "?")
+                violation = (
+                    "cycle",
+                    128,
+                    cycle_for,
+                    f"节点转移持续重复 {edge[0]} -> {edge[1]}",
+                )
+            elif (
+                stall_timeout_seconds > 0
+                and snapshot.phase_active
+                and phase_for >= stall_timeout_seconds
+            ):
+                violation = (
+                    "node",
+                    127,
+                    phase_for,
+                    f"{snapshot.phase} 阶段未结束",
+                )
+            elif stall_timeout_seconds > 0 and idle_for >= stall_timeout_seconds:
+                violation = (
+                    "idle",
+                    129,
+                    idle_for,
+                    f"节点事件静默，最后事件: {snapshot.last_event or '无'}",
+                )
+
+            if violation is None:
+                if watchdog_warning is not None:
+                    mfaalog.info(
+                        f"watchdog 状态已恢复，取消 {watchdog_warning[0]} 宽限期"
+                    )
+                watchdog_warning = None
+            else:
+                cause, exit_code, elapsed, description = violation
+                if watchdog_warning is None or watchdog_warning[0] != cause:
+                    watchdog_warning = (cause, now)
+                    mfaalog.warning(
+                        f"watchdog 检测到 {description}（{elapsed:.1f} 秒），进入 "
+                        f"{grace_seconds:g} 秒宽限期；最后节点: "
+                        f"{snapshot.last_node or '尚未进入节点'}"
+                    )
+                if now - watchdog_warning[1] >= grace_seconds:
+                    if task_job.done:
+                        break
+                    mfaalog.error(
+                        f"watchdog {cause} 超时，停止任务；最后节点: "
+                        f"{snapshot.last_node or '尚未进入节点'}"
+                    )
+                    return exit_code if _stop_task(tasker) else 125
             time.sleep(0.1)
     except KeyboardInterrupt:
         mfaalog.warning("收到 Ctrl+C，正在停止任务...")
@@ -395,6 +655,101 @@ def _run_task_with_timeout(
     mfaalog.info(f"任务完成: entry={entry}, elapsed={elapsed:.1f}s")
     mfaalog.debug(f"任务详情: {detail}")
     return 0
+
+
+_WATCHDOG_CAUSES = {
+    124: "total",
+    126: "pending",
+    127: "node",
+    128: "cycle",
+    129: "idle",
+}
+
+
+def _run_task_with_recovery(
+    tasker: Any,
+    progress: _ProgressSink,
+    create_tasker: Any,
+    entry: str,
+    pipeline_override: dict[str, Any],
+    *,
+    timeout_seconds: float,
+    stall_timeout_seconds: float,
+    progress_node_patterns: tuple[str, ...] = (),
+    loop_exempt_node_patterns: tuple[str, ...] = (),
+    recovery_entry: str | None = None,
+    recovery_pipeline_override: dict[str, Any] | None = None,
+    recovery_retries: int = 0,
+) -> tuple[int, Any, _ProgressSink]:
+    """Run one logical task, optionally recovering and retrying after watchdog stops."""
+    logical_started = time.monotonic()
+    attempt = 0
+
+    def remaining_timeout(limit: float) -> float:
+        if timeout_seconds <= 0:
+            return limit
+        remaining = max(0.0, timeout_seconds - (time.monotonic() - logical_started))
+        if limit <= 0:
+            return remaining
+        return min(limit, remaining)
+
+    while True:
+        remaining = remaining_timeout(0.0)
+        if timeout_seconds > 0 and remaining <= 0:
+            mfaalog.error("逻辑任务（含恢复与重试）已耗尽总超时预算")
+            return 124, tasker, progress
+
+        exit_code = _run_task_with_timeout(
+            tasker,
+            entry,
+            pipeline_override,
+            remaining,
+            stall_timeout_seconds,
+            progress,
+            progress_node_patterns,
+            loop_exempt_node_patterns,
+        )
+        if exit_code == 0 or exit_code in (125, 130):
+            return exit_code, tasker, progress
+
+        cause = _WATCHDOG_CAUSES.get(exit_code)
+        can_recover = (
+            cause is not None
+            and cause != "total"
+            and recovery_entry is not None
+            and attempt < recovery_retries
+        )
+        if not can_recover:
+            return exit_code, tasker, progress
+
+        attempt += 1
+        mfaalog.warning(
+            f"watchdog 原因={cause}；启动恢复 entry={recovery_entry}，"
+            f"之后第 {attempt}/{recovery_retries} 次重试原任务"
+        )
+        try:
+            tasker = create_tasker()
+        except Exception as error:
+            mfaalog.error(f"为恢复任务重建 Tasker 失败: {error}")
+            return 1, tasker, progress
+        progress = _attach_progress_sink(tasker)
+        recovery_budget = remaining_timeout(120.0)
+        if timeout_seconds > 0 and recovery_budget <= 0:
+            return 124, tasker, progress
+        recovery_code = _run_task_with_timeout(
+            tasker,
+            recovery_entry,
+            recovery_pipeline_override or {},
+            recovery_budget,
+            stall_timeout_seconds,
+            progress,
+        )
+        if recovery_code != 0:
+            mfaalog.error(
+                f"恢复 entry 失败: {recovery_entry}, 退出码 {recovery_code}"
+            )
+            return recovery_code, tasker, progress
+        mfaalog.info(f"恢复 entry 完成，重新运行原任务: {entry}")
 
 
 def _load_pipeline_resources(resource: Any, resource_root: str) -> bool:
@@ -475,7 +830,38 @@ def main():
         "--timeout",
         type=_non_negative_float,
         default=None,
-        help="任务超时秒数（默认 1200；设为 0 表示不限制）",
+        help="任务超时秒数（默认 600；设为 0 表示不限制）",
+    )
+    parser.add_argument(
+        "--stall-timeout",
+        type=_non_negative_float,
+        default=None,
+        help="任务无有效进展的秒数（默认 180；0 表示关闭 watchdog）",
+    )
+    parser.add_argument(
+        "--progress-node",
+        action="append",
+        default=None,
+        metavar="GLOB",
+        help="命中时重置循环检测窗口的节点 glob；可重复指定",
+    )
+    parser.add_argument(
+        "--loop-exempt-node",
+        action="append",
+        default=None,
+        metavar="GLOB",
+        help="允许长期循环的节点 glob；可重复指定",
+    )
+    parser.add_argument(
+        "--recovery-entry",
+        default=None,
+        help="watchdog 中断后运行的恢复 pipeline entry",
+    )
+    parser.add_argument(
+        "--recovery-retries",
+        type=_non_negative_int,
+        default=None,
+        help="恢复后重试原任务的次数",
     )
     parser.add_argument(
         "--resource-root",
@@ -492,7 +878,11 @@ def main():
         except TomlConfigError as error:
             mfaalog.error(f"配置文件加载失败: {error}")
             return 2
-    _apply_single_config(args, config)
+    try:
+        _apply_single_config(args, config)
+    except ValueError as error:
+        mfaalog.error(f"参数配置无效: {error}")
+        return 2
 
     if args.list_tasks:
         _print_task_list(args.resource_root)
@@ -609,26 +999,43 @@ def main():
 
     if not _load_pipeline_resources(resource, args.resource_root):
         return 1
+    if args.recovery_entry and args.recovery_entry not in resource.node_list:
+        mfaalog.error(f"恢复 entry 不存在于已加载资源: {args.recovery_entry}")
+        return 2
 
     # -- 3. 创建 Tasker 并运行任务 -------------------------------------------
     from maa.tasker import Tasker
 
-    tasker = Tasker()
-    if not tasker.bind(resource, controller):
-        mfaalog.error("Tasker 绑定 Resource/Controller 失败")
-        return 1
+    def create_tasker() -> Any:
+        new_tasker = Tasker()
+        if not new_tasker.bind(resource, controller):
+            raise RuntimeError("Tasker 绑定 Resource/Controller 失败")
+        if not new_tasker.inited:
+            raise RuntimeError("Tasker 初始化失败")
+        return new_tasker
 
-    if not tasker.inited:
-        mfaalog.error("Tasker 初始化失败")
+    try:
+        tasker = create_tasker()
+    except RuntimeError as error:
+        mfaalog.error(str(error))
         return 1
 
     mfaalog.info(f"运行任务: {task_entry}")
-    return _run_task_with_timeout(
+    progress = _attach_progress_sink(tasker)
+    exit_code, _, _ = _run_task_with_recovery(
         tasker,
+        progress,
+        create_tasker,
         task_entry,
         pipeline_override,
-        args.timeout,
+        timeout_seconds=args.timeout,
+        stall_timeout_seconds=args.stall_timeout,
+        progress_node_patterns=tuple(args.progress_node),
+        loop_exempt_node_patterns=tuple(args.loop_exempt_node),
+        recovery_entry=args.recovery_entry,
+        recovery_retries=args.recovery_retries,
     )
+    return exit_code
 
 
 if __name__ == "__main__":

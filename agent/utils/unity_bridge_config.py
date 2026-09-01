@@ -24,6 +24,11 @@ class SingleRunConfig:
     task_name: str | None = None
     account_id: str | None = None
     timeout: float | None = None
+    stall_timeout: float | None = None
+    progress_nodes: tuple[str, ...] = ()
+    loop_exempt_nodes: tuple[str, ...] = ()
+    recovery_entry: str | None = None
+    recovery_retries: int = 0
     options: tuple[str, ...] = ()
     click: tuple[float, float] | None = None
     after_click: float | None = None
@@ -34,6 +39,11 @@ class BatchTaskConfig:
     name: str
     enabled: bool = True
     timeout: float | None = None
+    stall_timeout: float | None = None
+    progress_nodes: tuple[str, ...] = ()
+    loop_exempt_nodes: tuple[str, ...] = ()
+    recovery_entry: str | None = None
+    recovery_retries: int = 0
     options: tuple[str, ...] = ()
 
 
@@ -42,7 +52,8 @@ class BatchRunConfig:
     bridge_dir: str | None = None
     resource_root: str | None = None
     account_id: str = "0"
-    default_timeout: float = 1200.0
+    default_timeout: float = 600.0
+    default_stall_timeout: float = 180.0
     continue_on_error: bool = True
     tasks: tuple[BatchTaskConfig, ...] = field(default_factory=tuple)
 
@@ -112,6 +123,17 @@ def _optional_timeout(table: dict[str, Any], key: str, location: str) -> float |
     return result
 
 
+def _optional_non_negative_int(
+    table: dict[str, Any], key: str, location: str
+) -> int | None:
+    if key not in table:
+        return None
+    value = table[key]
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise TomlConfigError(f"{location}.{key} 必须是非负整数")
+    return value
+
+
 def _account_id(table: dict[str, Any], key: str, location: str) -> str | None:
     if key not in table:
         return None
@@ -144,6 +166,31 @@ def _options(value: Any, location: str) -> tuple[str, ...]:
     return tuple(result)
 
 
+def _string_list(value: Any, location: str) -> tuple[str, ...]:
+    if value is None:
+        return ()
+    if not isinstance(value, list) or any(
+        not isinstance(item, str) or not item.strip() for item in value
+    ):
+        raise TomlConfigError(f"{location} 必须是非空字符串数组")
+    return tuple(item.strip() for item in value)
+
+
+def _recovery_config(
+    table: dict[str, Any], location: str
+) -> tuple[str | None, int]:
+    entry = _optional_string(table, "recovery_entry", location)
+    configured_retries = _optional_non_negative_int(
+        table, "recovery_retries", location
+    )
+    retries = (1 if entry else 0) if configured_retries is None else configured_retries
+    if retries > 0 and entry is None:
+        raise TomlConfigError(
+            f"{location}.recovery_retries 大于 0 时必须配置 recovery_entry"
+        )
+    return entry, retries
+
+
 def _resolved_path(value: str | None, config_dir: Path) -> str | None:
     if value is None:
         return None
@@ -162,13 +209,28 @@ def load_single_run_config(config_path: str | Path) -> SingleRunConfig:
     task = _table(document, "task")
     click = _table(document, "click")
     _reject_unknown(bridge, {"dir"}, "bridge")
-    _reject_unknown(task, {"name", "account_id", "timeout", "options"}, "task")
+    _reject_unknown(
+        task,
+        {
+            "name",
+            "account_id",
+            "timeout",
+            "stall_timeout",
+            "progress_nodes",
+            "loop_exempt_nodes",
+            "recovery_entry",
+            "recovery_retries",
+            "options",
+        },
+        "task",
+    )
     _reject_unknown(click, {"x", "y", "after_click"}, "click")
 
     bridge_dir = _optional_string(bridge, "dir", "bridge", empty_is_none=True)
     task_name = _optional_string(task, "name", "task")
     account_id = _account_id(task, "account_id", "task")
     timeout = _optional_timeout(task, "timeout", "task")
+    stall_timeout = _optional_timeout(task, "stall_timeout", "task")
     options = _options(task.get("options"), "task.options")
     if task and task_name is None:
         raise TomlConfigError("task.name 是 task 表的必填字段")
@@ -197,12 +259,20 @@ def load_single_run_config(config_path: str | Path) -> SingleRunConfig:
         raise TomlConfigError("resource_root 不能为空")
 
     normalized_resource_root = resource_root.strip() if resource_root else None
+    recovery_entry, recovery_retries = _recovery_config(task, "task")
     return SingleRunConfig(
         bridge_dir=_resolved_path(bridge_dir, config_dir),
         resource_root=_resolved_path(normalized_resource_root, config_dir),
         task_name=task_name,
         account_id=account_id,
         timeout=timeout,
+        stall_timeout=stall_timeout,
+        progress_nodes=_string_list(task.get("progress_nodes"), "task.progress_nodes"),
+        loop_exempt_nodes=_string_list(
+            task.get("loop_exempt_nodes"), "task.loop_exempt_nodes"
+        ),
+        recovery_entry=recovery_entry,
+        recovery_retries=recovery_retries,
         options=options,
         click=click_point,
         after_click=after_click,
@@ -219,7 +289,12 @@ def load_batch_run_config(config_path: str | Path) -> BatchRunConfig:
     _reject_unknown(bridge, {"dir"}, "bridge")
     _reject_unknown(
         global_config,
-        {"account_id", "default_timeout", "continue_on_error"},
+        {
+            "account_id",
+            "default_timeout",
+            "default_stall_timeout",
+            "continue_on_error",
+        },
         "global",
     )
 
@@ -228,7 +303,12 @@ def load_batch_run_config(config_path: str | Path) -> BatchRunConfig:
     default_timeout = (
         _optional_timeout(global_config, "default_timeout", "global")
         if "default_timeout" in global_config
-        else 1200.0
+        else 600.0
+    )
+    default_stall_timeout = (
+        _optional_timeout(global_config, "default_stall_timeout", "global")
+        if "default_stall_timeout" in global_config
+        else 180.0
     )
     continue_on_error = _optional_bool(
         global_config, "continue_on_error", "global"
@@ -243,16 +323,41 @@ def load_batch_run_config(config_path: str | Path) -> BatchRunConfig:
         location = f"tasks[{index}]"
         if not isinstance(raw_task, dict):
             raise TomlConfigError(f"{location} 必须是 TOML 表")
-        _reject_unknown(raw_task, {"name", "enabled", "timeout", "options"}, location)
+        _reject_unknown(
+            raw_task,
+            {
+                "name",
+                "enabled",
+                "timeout",
+                "stall_timeout",
+                "progress_nodes",
+                "loop_exempt_nodes",
+                "recovery_entry",
+                "recovery_retries",
+                "options",
+            },
+            location,
+        )
         name = _optional_string(raw_task, "name", location)
         if name is None:
             raise TomlConfigError(f"{location}.name 是必填字段")
         enabled = _optional_bool(raw_task, "enabled", location)
+        recovery_entry, recovery_retries = _recovery_config(raw_task, location)
         tasks.append(
             BatchTaskConfig(
                 name=name,
                 enabled=True if enabled is None else enabled,
                 timeout=_optional_timeout(raw_task, "timeout", location),
+                stall_timeout=_optional_timeout(raw_task, "stall_timeout", location),
+                progress_nodes=_string_list(
+                    raw_task.get("progress_nodes"), f"{location}.progress_nodes"
+                ),
+                loop_exempt_nodes=_string_list(
+                    raw_task.get("loop_exempt_nodes"),
+                    f"{location}.loop_exempt_nodes",
+                ),
+                recovery_entry=recovery_entry,
+                recovery_retries=recovery_retries,
                 options=_options(raw_task.get("options"), f"{location}.options"),
             )
         )
@@ -265,11 +370,13 @@ def load_batch_run_config(config_path: str | Path) -> BatchRunConfig:
 
     normalized_resource_root = resource_root.strip() if resource_root else None
     assert default_timeout is not None
+    assert default_stall_timeout is not None
     return BatchRunConfig(
         bridge_dir=_resolved_path(bridge_dir, config_dir),
         resource_root=_resolved_path(normalized_resource_root, config_dir),
         account_id=account_id,
         default_timeout=default_timeout,
+        default_stall_timeout=default_stall_timeout,
         continue_on_error=(
             True if continue_on_error is None else continue_on_error
         ),

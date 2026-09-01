@@ -12,7 +12,8 @@
 
     [global]
     account_id = "0"
-    default_timeout = 1200.0
+    default_timeout = 600.0
+    default_stall_timeout = 180.0
     continue_on_error = true
 
     [[tasks]]
@@ -40,6 +41,7 @@ _resolve_bridge_dir = bridge._resolve_bridge_dir
 _resolve_task = bridge._resolve_task
 _ensure_ocr_models = bridge._ensure_ocr_models
 _run_task_with_timeout = bridge._run_task_with_timeout
+_run_task_with_recovery = bridge._run_task_with_recovery
 _load_pipeline_resources = bridge._load_pipeline_resources
 
 from utils import mfaalog
@@ -59,10 +61,12 @@ class BatchTaskRunner:
         resource: Any,
         default_timeout: float,
         continue_on_error: bool,
+        default_stall_timeout: float = 180.0,
     ):
         self.controller = controller
         self.resource = resource
         self.default_timeout = default_timeout
+        self.default_stall_timeout = default_stall_timeout
         self.continue_on_error = continue_on_error
         self.tasker = None
         self.results: list[dict[str, Any]] = []
@@ -115,6 +119,11 @@ class BatchTaskRunner:
                 if task_config.timeout is None
                 else task_config.timeout
             )
+            stall_timeout = (
+                self.default_stall_timeout
+                if task_config.stall_timeout is None
+                else task_config.stall_timeout
+            )
 
             if not enabled:
                 mfaalog.info(f"[{index}/{total}] 跳过任务: {task_name} (已禁用)")
@@ -138,10 +147,18 @@ class BatchTaskRunner:
                     resource_root, task_name, list(task_config.options)
                 )
                 mfaalog.info(f"[{index}/{total}] 已解析: {resolved_name} -> {entry}")
-
-                # 执行任务
-                exit_code = _run_task_with_timeout(
-                    self.tasker, entry, pipeline_override, timeout, progress
+                exit_code, self.tasker, progress = _run_task_with_recovery(
+                    self.tasker,
+                    progress,
+                    self._create_tasker,
+                    entry,
+                    pipeline_override,
+                    timeout_seconds=timeout,
+                    stall_timeout_seconds=stall_timeout,
+                    progress_node_patterns=task_config.progress_nodes,
+                    loop_exempt_node_patterns=task_config.loop_exempt_nodes,
+                    recovery_entry=task_config.recovery_entry,
+                    recovery_retries=task_config.recovery_retries,
                 )
 
                 elapsed = time.monotonic() - start_time
@@ -190,12 +207,29 @@ class BatchTaskRunner:
                             "status": "failed",
                             "exit_code": exit_code,
                             "elapsed": elapsed,
+                            "reason": (
+                                "stop_unconfirmed"
+                                if exit_code == 125
+                                else "task_failed"
+                            ),
                         }
                     )
 
+                    if exit_code == 125:
+                        mfaalog.error(
+                            "停止请求未确认完成；为避免复用仍在运行的 Tasker，"
+                            "终止后续批处理"
+                        )
+                        break
                     if not self.continue_on_error:
                         mfaalog.error("任务失败，停止后续任务执行")
                         break
+                    if exit_code in bridge._WATCHDOG_CAUSES and index < total:
+                        mfaalog.info(
+                            "watchdog 已确认任务停止，重建 Tasker 后继续批处理"
+                        )
+                        self.tasker = self._create_tasker()
+                        progress = bridge._attach_progress_sink(self.tasker)
 
             except Exception as error:
                 failed += 1
@@ -424,12 +458,26 @@ def main():
 
     if not _load_pipeline_resources(resource, resource_root):
         return 1
+    missing_recovery_entries = sorted(
+        {
+            task.recovery_entry
+            for task in config.tasks
+            if task.recovery_entry and task.recovery_entry not in resource.node_list
+        }
+    )
+    if missing_recovery_entries:
+        mfaalog.error(
+            "恢复 entry 不存在于已加载资源: "
+            + "、".join(missing_recovery_entries)
+        )
+        return 2
 
     # 创建批量任务执行器
     runner = BatchTaskRunner(
         controller=controller,
         resource=resource,
         default_timeout=config.default_timeout,
+        default_stall_timeout=config.default_stall_timeout,
         continue_on_error=config.continue_on_error,
     )
 

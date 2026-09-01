@@ -19,7 +19,6 @@ import json
 import os
 import re
 import sys
-import threading
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -59,6 +58,12 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--timeout", type=bridge._non_negative_float, default=15.0, help="超时秒数"
+    )
+    parser.add_argument(
+        "--stall-timeout",
+        type=bridge._non_negative_float,
+        default=15.0,
+        help="无有效进展超时秒数（默认 15）",
     )
     parser.add_argument("--account-id", default="0", help="PersistentStore 账号 ID")
     parser.add_argument("--bridge-dir", help="Bridge 插件目录；默认自动发现")
@@ -131,18 +136,15 @@ def save_screenshot(controller: Any, path: Path) -> None:
     Image.fromarray(image[:, :, ::-1]).save(path)
 
 
-class EventRecorder:
+class EventRecorder(bridge._ProgressSink):
     """Collect relevant MaaFW events while satisfying the timeout helper API."""
 
     def __init__(self) -> None:
+        super().__init__()
         self.events: list[dict[str, Any]] = []
-        self.last_node = ""
-        self._lock = threading.Lock()
 
     def record(self, message: str, details: dict[str, Any]) -> None:
-        if not message.startswith(
-            ("Node.PipelineNode.", "Node.Action.", "Node.WaitFreezes.")
-        ):
+        if not message.startswith(bridge._ProgressSink._ACTIVITY_PREFIXES):
             return
         name = str(details.get("name", "?"))
         event = {
@@ -153,10 +155,12 @@ class EventRecorder:
             "focus": details.get("focus", ""),
         }
         with self._lock:
+            active_task_id = self._task_id
+        if active_task_id is not None and details.get("task_id") != active_task_id:
+            return
+        self.emit(message, details)
+        with self._lock:
             self.events.append(event)
-            if message.startswith("Node.PipelineNode."):
-                self.last_node = name
-        mfaalog.info(f"[实验台] {name}: {event['state']}")
 
 
 def attach_recorder(tasker: Any, recorder: EventRecorder) -> Any:
@@ -234,12 +238,13 @@ def main() -> int:
     if not tasker.bind(resource, controller) or not tasker.inited:
         raise RuntimeError("Tasker 绑定或初始化失败")
     recorder = EventRecorder()
-    sink = attach_recorder(tasker, recorder)
+    attach_recorder(tasker, recorder)
     exit_code = bridge._run_task_with_timeout(
         tasker,
         args.node,
         pipeline_override,
         args.timeout,
+        args.stall_timeout,
         recorder,
     )
 
