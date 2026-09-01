@@ -391,9 +391,10 @@ def main():
         return 0
 
     # 切换账号并加载存档
+    from utils.account_sync import bind_runtime_account
     from utils.persistent_store import PersistentStore
 
-    PersistentStore.switch_account(config.account_id)
+    bind_runtime_account(config.account_id)
     PersistentStore.load()
     mfaalog.info(f"使用存档账号: {config.account_id}")
 

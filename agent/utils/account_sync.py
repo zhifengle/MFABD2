@@ -4,6 +4,10 @@
 =========================
 把「当前该用哪个存档」从「等某个节点被执行」改成「要用之前自己看一眼」。
 
+Unity Bridge 的 runner 在启动时通过 ``bind_runtime_account`` 绑定本进程
+的权威存档号。绑定后本模块不再从 pipeline override 读取账号，
+任务、恢复和重试共享同一个 runner 级存档。
+
 为什么不需要扳机
 ----------------
 存档号由 interface.json 的「存档名称」选项经 pipeline_override 注入
@@ -62,6 +66,18 @@ NODE_NAME = "Env_AccountSave_Switch"
 # 否则运行途中改存档号就不再生效（interface.json 里对用户承诺了它会生效）。
 _warned = False
 
+# Unity Bridge 是独立进程，其 TOML/CLI 配置是本次运行的唯一账号来源。
+# None 表示未进入 Bridge 固定账号模式，保留原有 context 同步行为。
+_runtime_account_id: str | None = None
+
+
+def bind_runtime_account(account_id: str) -> None:
+    """Bind the account selected by a standalone Unity Bridge runner."""
+    global _runtime_account_id
+
+    _runtime_account_id = str(account_id)
+    PersistentStore.switch_account(_runtime_account_id)
+
 
 def sync_from_context(context, where: str = "") -> bool:
     """从 context 读取当前存档号并同步给 PersistentStore。
@@ -88,6 +104,11 @@ def sync_from_context(context, where: str = "") -> bool:
     危险得多，且是静默的。所以失败路径是「什么都不做 + 告警」，不是「用默认值」。
     """
     global _warned
+
+    if _runtime_account_id is not None:
+        # runner 启动时已完成切换，Bridge 运行期不再从 pipeline 同步。
+        _warned = False
+        return True
 
     try:
         node = context.get_node_data(NODE_NAME)

@@ -911,9 +911,10 @@ def main():
         task_name, task_entry, _ = resolved_task
         mfaalog.info(f"已选择任务: {task_name} -> {task_entry}")
 
+        from utils.account_sync import bind_runtime_account
         from utils.persistent_store import PersistentStore
 
-        PersistentStore.switch_account(args.account_id)
+        bind_runtime_account(args.account_id)
         PersistentStore.load()
         mfaalog.info(f"使用存档账号: {args.account_id}")
 

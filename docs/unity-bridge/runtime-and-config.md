@@ -109,6 +109,9 @@ uv run agent/run_unity_bridge.py `
 
 注意：CLI 只要出现一个 `--option`，就会替换整组 TOML options，而不是逐项合并。需要混用时，应在 CLI 中完整写出全部选项。
 
+runner 会在启动时将最终的 `account_id` 绑定为本 Bridge 进程的
+权威存档号。任务、恢复和重试共享该绑定，不再通过 pipeline override 传递账号。
+
 ## 批处理 runner
 
 批处理串行运行任务，并复用 Controller 和 Resource。正常任务复用 Tasker；任务超时并确认停止后会重建 Tasker，避免复用已停止的执行状态。
