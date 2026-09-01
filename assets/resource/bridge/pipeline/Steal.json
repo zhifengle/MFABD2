@@ -1,0 +1,11 @@
+{
+    "#Steal_Bridge": {
+        "desc": "[Unity Bridge] 每周偷窃独立流程，与地图采集平级。总入口 Steal_Entry 依次调度各 Story 子流程；目前仅实现 Story 01。"
+    },
+    "Steal_Entry": {
+        "timeout": 1,
+        "next": [
+            "[JumpBack]Steal_Story01_Entry"
+        ]
+    }
+}
