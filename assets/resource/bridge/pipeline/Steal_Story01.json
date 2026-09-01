@@ -70,7 +70,7 @@
             "ExplorationBoard_Arrived": "Steal_Story01_BoardArrived"
         },
         "next": [
-            "Collect_WayPoint_Entry"
+            "Steal_Story01_BoardRoute"
         ],
         "on_error": [
             "Global_Null_Exception"
@@ -89,6 +89,25 @@
         "on_error": [
             "Global_Null_Exception"
         ]
+    },
+    "Steal_Story01_BoardRoute": {
+        "desc": "Steal_01 回探索告示板专用。打开寻路下拉并仅选'探索告示板',不含狩猎场/旅馆——修复前复用共享 Collect_WayPoint_Entry 的 hunt-priority,列表同时含狩猎场/告示板时被投放狩猎场。",
+        "recognition": "Or",
+        "any_of": [
+            "Collect_WayPoint_Open_Tpl",
+            "Collect_WayPoint_Csm"
+        ],
+        "post_delay": 500,
+        "next": [
+            "Collect_WayPoint_Board",
+            "[JumpBack]Collect_WayPoint_Open_Tpl",
+            "[JumpBack]Collect_WayPoint_Csm",
+            "Steal_Story01_BoardRoute"
+        ],
+        "on_error": [
+            "Collect_TeleporCircle_OnlyFoot_Entry"
+        ],
+        "focus": "S01.返回探索告示板"
     },
     "Steal_Story01_FindNPC": {
         "max_hit": 3,

@@ -238,11 +238,6 @@ class UnityBridgePipelineTests(unittest.TestCase):
                     self.next_names(self.pc_resource.get_node_data(node_name)),
                 )
 
-    def test_steal_reuses_upstream_waypoint_return_flow(self) -> None:
-        return_board = self.node("Steal_Story01_ReturnBoard")
-        self.assertEqual(self.next_names(return_board), ["Collect_WayPoint_Entry"])
-        self.assertNotIn("Collect_ReturnToExplorationBoard", self.resource.node_list)
-
     def test_quick_hunt_map_swipes_preserve_end_hold_through_bridge_action(self) -> None:
         expected_points = {
             "QuickHunt_CollectMap_SwipLeft": ([556, 32], [624, 580]),
